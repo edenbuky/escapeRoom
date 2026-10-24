@@ -1,0 +1,85 @@
+Escape Room Story Script
+========================
+
+For the sake of project simplicity, the experience is built from clickable images
+and driven by a state machine.
+
+
+Plot
+----
+
+1. The player enters a room with Dana. Dana is not a morning person, and she
+   goes to get white chocolate.
+
+2. The door slams shut and the room locks. Written on the board: to be accepted
+   into the TDP program at the final stage, you must solve the puzzles and
+   successfully get out of the room. The room has an inner door, and the door
+   Dana left through.
+
+3. Dana's computer is open. The username and password
+   are not written down. On the left there is also Idan's open computer, which
+   appears to have sticky notes on it.
+
+4. Clicking Idan's computer opens a DataGrip-style platform: several table
+   names: users, employees, passwords and logs, a place to write SQL commands, and below that a view of the result
+   from running the code.
+
+5. The player investigates the tables with SQL read only commands.
+   There is an employees table where filtering by name reveals Dana's username.
+   There is also a table that stores logs. It contains a type (auth),
+   the player select from logs where username is dana_username and type='auth'.
+   There is an auth log from dana. the player will copy the encrypted Password to clipboard.
+
+6. The player clicks everywhere else to quit the sql commands window and clicks the Hash-Cracker machine and it opens enlarged.
+    The player then enter the hash and it outputs Dana's password and it saves an item of a note with the password in it in the item hints inventory.
+   clicking everywhere around the screen closes the enlarged window.
+
+7. The player clicks Dana's computer, types the username and password, and clicks Login.
+
+8. An executable file called "open room" appear on desktop.
+
+9. Clicking on the executable file opens the room and clicking on the open room we move the player to the second room.
+
+10. In the next room there is another open computer — Nathaniel's. Written on
+    the computer: "I went on vacation, please do not disturb."
+
+11. Among the tasks listed on the board there is one that reads: solve a Cibus
+    payment problem — Nathaniel.
+
+12. Clicking the computer reveals a file: Cibus_payment_try.pcap.
+
+13. Clicking the file opens its contents on the page and user can copy every line he wants, but everything is encrypted except the beginning of the tls handshake - before the CKE message.
+    The file is added to the hints in the bottom of the screen and clicking any other area of the screen out of the pcap window will return back to the last scene image of the room.
+
+14. Besides the pcap file, there is also a shortcut to the terminal on the
+    desktop. Clicking it opens a git terminal.
+
+15. Looking at the commit history, or at the git log file, the player sees in
+    the current version's commit: "Security fix: Removed private key from
+    repository." There are RSA machines in the room, so it is clear that the
+    private key is what needs to be recovered.
+
+16. The player types the appropriate commands on the black screen to retrieve
+    the previous commit. In it they find the private key that decrypts part of
+    the pcap (the message that contains the encrypted PMS). the player use can command and copy the private key (like he copied previously the hash from the output database records in the previous room)
+
+17. The player clicks the RSA decryptor machine, paste the private key into the
+    private key field, copy the encrypted PMS from the encrypted CKE message in the pcap file, and copy the N of the modulus from the certificate message in the handshake in the pcap file. Then the player clicks Decrypt and get the decrypted PMS.
+
+18. player now can see the decrypted PMS key as the output of the RSA decryptor, and copy it.
+
+19. The player now paste the decrypted pms in the relevant field in the TLS decryptor machine together with the
+    Client Random that he also need to copy from the pcap file - from the beginning of the file where the file isn't encrypted yet.
+    The player now click on decrypt - The machine's output is a decrypted pcap, which is added
+    to the hints list.
+
+20. The player clicks the decrypted pcap, scrolls, and searches the App-Data
+    Records for Nathaniel's credit card (from his attempt to make a Cibus
+    payment in order to check that it works). then the player copy the credit card and it creates a hint in the inventory with the credit card number on a note.
+
+21. The code that opens the door has the structure of a credit card number, so
+    the connection is clear. The player enters Nathaniel's credit card digits
+    on the lock of the second door, and it opens.
+
+22. At the door, Dana appears, along with a "Welcome to the team" sign, an
+    AT&T icon, and a victory atmosphere.
