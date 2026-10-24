@@ -19,14 +19,25 @@
 
 ## Technology Stack
 
-Fixed by `DESIGN-TECHNOLOGIES.md`:
+These are binding constraints. A design choice that drops one is a change to this section, not a local exception.
 
-- NestJS (TypeScript) REST API, documented in Swagger UI
-- React (TypeScript) client
-- Microsoft Entra ID sign-in; role checks on the server
-- Postgres through TypeORM
-- Redis for exactly one feature: Admin Statistics
-- Event bus for exactly one feature: Hint Platform
+| Area | Rule |
+| --- | --- |
+| Backend | NestJS in TypeScript. The REST API (HTTP and JSON) owns all business logic: validation, state changes, and domain rules. OpenAPI is published through Swagger UI (`@nestjs/swagger`). TypeScript only; no Java or JDK. |
+| Frontend | React in TypeScript. It talks to the backend only through the REST API. It presents state and collects input. It never owns a business rule and never opens Postgres, Redis, or the event bus. |
+| Authentication | Microsoft Entra ID. The browser signs in with Entra and sends the token. The server validates it on every call. No passwords are collected, hashed, or stored, and there are no server-side session cookies. |
+| Authorization | Role-based and enforced on the server. Every protected action names its role. A missing or insufficient role is rejected by the API. Hiding a button is not authorization. |
+| Database | Postgres is the system database, accessed only through TypeORM. Users store their Entra identity, never a password. TypeORM migrations build the schema, and one documented command rebuilds a clean local database. Connection settings come from environment variables: `.env.example` lists them with placeholders, and the real `.env` and secrets stay out of git. No in-memory or mocked substitute: an API write survives a restart. |
+| Caching | Redis for exactly one feature: **Admin Statistics**. It caches read-heavy aggregates for `GET /admin/stats`. Postgres is the source of truth, and the cache is cleared when a session ends. No other feature adds a cache. |
+| Event-driven | Exactly one feature: **Hint Platform**. Sessions publishes `RiddleSolved`, and a separate handler stores the earned note. The request does not do that work inline. Every other feature is request/response. |
+
+### Riddle Props
+
+Riddle props are riddle state, not TypeORM databases. Postgres remains the system database.
+
+- **SQL riddle:** sqlplay supplies the small SQLite database with the `employees` and `logs` tables. Only `SELECT` is allowed.
+- **Hash-Cracker:** the server stores a sha256 hex built with Node `crypto` in `logs`. It compares the player's hash to that value and returns Dana's password on a match. It never reverses a hash.
+- **Terminal riddle:** xterm.js (`@xterm/xterm`) draws the screen only. The repository is isomorphic-git on the server: two commits, where the first adds the private key and the second removes it with "Security fix: Removed private key from repository." The terminal sends each line to the server, and the server returns text.
 
 ## System Architecture
 
@@ -93,6 +104,18 @@ flowchart TB
 - Only Sessions runs components. Components never call Sessions.
 - Riddle props (SQLite database, git repository) live in server memory per session and component. They are riddle state, not Postgres data and not a cache.
 - SkillSwapper belongs to another team. Read-only, synchronous, nothing stored.
+
+### Service Layout: One Backend, Two Repos
+
+- Two repos: frontend (React) and backend (NestJS).
+- One backend service: a modular monolith. Riddles (Components module: SmartComponent kinds, ComponentRegistry, PropRuntime) and Story (Scripts and Sessions modules) are modules inside it, not separate services. Hints, Stats, Coach, and the SkillSwapper adapter are modules too.
+- Why not microservices:
+  - One team, one domain. No independent scaling or deploy need.
+  - Ruin-and-reset must be atomic: stop session, restore prop, write records, respond, in one transaction. Across services that becomes a distributed transaction or saga.
+  - A command is one in-process call (Sessions to component), not a network hop with retries, timeouts, and versioned contracts.
+  - One deploy, one database, one log stream, one Swagger.
+  - Module boundaries plus the Architecture Rules (only Database touches Postgres, only Stats touches Redis, only Sessions calls execute) give the same separation.
+- Split later if needed: modules talk through services and the one event, so a module (for example Hints or Stats) can be extracted without redesign.
 
 ## React Rules & Constraints
 
@@ -301,10 +324,9 @@ erDiagram
 
 One contract for every kind. Current kinds: `sql`, `terminal`. Later: `cracker`, `lock`.
 
-Color key: purple = contract, blue = implementations, light blue = planned, dark gray = orchestrator, light gray = supporting types.
+Planned classes are marked `<<planned>>`.
 
 ```mermaid
-%%{init: {"theme": "base", "themeVariables": {"fontSize": "16px", "fontFamily": "Arial, Helvetica, sans-serif", "lineColor": "#334155", "primaryTextColor": "#0f172a"}}}%%
 classDiagram
   direction TB
   class SmartComponent~S~ {
@@ -400,10 +422,10 @@ classDiagram
   }
   SmartComponent <|.. SqlComponent
   SmartComponent <|.. TerminalComponent
-  SmartComponent <|.. HashCrackerComponent
-  SmartComponent <|.. RsaDecryptorComponent
-  SmartComponent <|.. TlsDecryptorComponent
-  SmartComponent <|.. LockComponent
+  HashCrackerComponent ..|> SmartComponent
+  RsaDecryptorComponent ..|> SmartComponent
+  TlsDecryptorComponent ..|> SmartComponent
+  LockComponent ..|> SmartComponent
   SmartComponent ..> ExecuteContext
   SmartComponent ..> ExecuteResult
   SmartComponent ..> Verdict
@@ -414,20 +436,6 @@ classDiagram
   SessionsService --> PropRuntime : restore on ruin and reset
   PropRuntime ..> SmartComponent : createInitial
 
-  style SmartComponent fill:#7c3aed,stroke:#4c1d95,color:#ffffff,stroke-width:2px
-  style SqlComponent fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:2px
-  style TerminalComponent fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:2px
-  style HashCrackerComponent fill:#dbeafe,stroke:#1d4ed8,color:#0f172a,stroke-width:2px,stroke-dasharray:6 4
-  style RsaDecryptorComponent fill:#dbeafe,stroke:#1d4ed8,color:#0f172a,stroke-width:2px,stroke-dasharray:6 4
-  style TlsDecryptorComponent fill:#dbeafe,stroke:#1d4ed8,color:#0f172a,stroke-width:2px,stroke-dasharray:6 4
-  style LockComponent fill:#dbeafe,stroke:#1d4ed8,color:#0f172a,stroke-width:2px,stroke-dasharray:6 4
-  style SessionsService fill:#334155,stroke:#0f172a,color:#ffffff,stroke-width:2px
-  style Session fill:#e2e8f0,stroke:#334155,color:#0f172a,stroke-width:2px
-  style ComponentRegistry fill:#e2e8f0,stroke:#334155,color:#0f172a,stroke-width:2px
-  style PropRuntime fill:#e2e8f0,stroke:#334155,color:#0f172a,stroke-width:2px
-  style ExecuteContext fill:#e2e8f0,stroke:#334155,color:#0f172a,stroke-width:2px
-  style ExecuteResult fill:#e2e8f0,stroke:#334155,color:#0f172a,stroke-width:2px
-  style Verdict fill:#e2e8f0,stroke:#334155,color:#0f172a,stroke-width:2px
 ```
 
 ### Contract Steps
@@ -522,7 +530,6 @@ flowchart TB
 ### Sequence 1: SQL SELECT
 
 ```mermaid
-%%{init: {"theme": "neutral", "themeVariables": {"fontSize": "18px", "fontFamily": "Arial, Helvetica, sans-serif"}, "sequence": {"mirrorActors": false, "messageFontSize": 18, "actorFontSize": 18}}}%%
 sequenceDiagram
   autonumber
   participant UI as React SQL View
@@ -551,7 +558,6 @@ sequenceDiagram
 ### Sequence 2: Ruined Terminal Command
 
 ```mermaid
-%%{init: {"theme": "neutral", "themeVariables": {"fontSize": "18px", "fontFamily": "Arial, Helvetica, sans-serif"}, "sequence": {"mirrorActors": false, "messageFontSize": 18, "actorFontSize": 18}}}%%
 sequenceDiagram
   autonumber
   participant UI as React xterm.js
@@ -582,7 +588,6 @@ sequenceDiagram
 ### Sequence 3: Riddle Solved → Hint Handler
 
 ```mermaid
-%%{init: {"theme": "neutral", "themeVariables": {"fontSize": "18px", "fontFamily": "Arial, Helvetica, sans-serif"}, "sequence": {"mirrorActors": false, "messageFontSize": 18, "actorFontSize": 18}}}%%
 sequenceDiagram
   autonumber
   participant UI as React
@@ -608,8 +613,8 @@ sequenceDiagram
   alt no hint
     H->>H: stop
   else hint configured
-    H->>PG: upsert Hint on (sessionId, riddleId, runNumber)
   end
+    H->>PG: upsert Hint on (sessionId, riddleId, runNumber)
   UI->>Auth: GET /sessions/:sid/hints (player, owner)
   Auth->>Svc: OK
   Svc->>PG: read Hint rows
@@ -800,7 +805,7 @@ One script: an ordered list of riddles with sample content.
 | Conflict | Decision |
 | --- | --- |
 | Story script lists `users` and `passwords` tables; binding context says `employees` and `logs` | `employees` and `logs` only |
-| `DESIGN-TECHNOLOGIES.md` says sqlplay supplies the console UI; binding context says thin client | sqlplay is a server-side prop; React is the thin client |
+| The original technologies document said sqlplay supplies the console UI; binding context says thin client | sqlplay is a server-side prop; React is the thin client |
 
 ## Open Items
 
