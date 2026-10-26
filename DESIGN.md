@@ -20,7 +20,7 @@
 | --- | --- |
 | Built (base) | Entra sign-in, session start, session timer |
 | Demo target | Escape room Script playable end to end: component factory, all six kinds, policy and goal engine, sessions, escape room skin. Does not depend on any Later Feature |
-| Later | Hint Platform, Admin Statistics, Clippy Board, SkillSwapper |
+| Later | Hint Platform, Admin Statistics, Clippy Board, SkillSwapper, Struggles |
 
 ## Technology Stack
 
@@ -31,9 +31,9 @@ These are binding constraints. A design choice that drops one is a change to thi
 | Backend | NestJS in TypeScript. The REST API (HTTP and JSON) owns all business logic: validation, state changes, and domain rules. OpenAPI is published through Swagger UI (`@nestjs/swagger`). TypeScript only; no Java or JDK. |
 | Frontend | React in TypeScript. It talks to the backend only through the REST API. It draws the skin, collects input, and presents state. It never owns a business rule and never opens Postgres, Redis, or the event bus. |
 | Authentication | Microsoft Entra ID. The browser signs in with Entra and sends the token. The server validates it on every call. No passwords are collected, hashed, or stored, and there are no server-side session cookies. |
-| Authorization | Role-based and enforced on the server. Every protected action names its role. A missing or insufficient role is rejected by the API. Hiding a button is not authorization. |
+| Authorization | Role-based and enforced on the server. Every protected action names its role (see API Routes). A missing or insufficient role is rejected by the API. Hiding a button is not authorization. |
 | Database | Postgres is the system database, accessed only through repositories built on TypeORM (see Repository Pattern). Users store their Entra identity, never a password. TypeORM migrations build the schema and seed the Scripts, and one documented command rebuilds a clean local database. Connection settings come from environment variables: `.env.example` lists them with placeholders, and the real `.env` and secrets stay out of git. No in-memory or mocked substitute: an API write survives a restart. |
-| Caching | Redis for exactly one feature: **Admin Statistics**. It caches read-heavy aggregates for `GET /admin/stats`. Postgres is the source of truth, and the cache is cleared when a session ends. No other feature adds a cache. |
+| Caching | Redis for exactly one feature: **Admin Statistics**. It caches read-heavy aggregates for `GET /admin/stats`. Postgres is the source of truth, and the cache is invalidated on every session status change. No other feature adds a cache. |
 | Event-driven | Exactly one feature: **Hint Platform**. Sessions publishes `RiddleSolved`, and a separate handler stores the earned note. The request does not do that work inline. Every other feature is request/response. |
 | Game assets | Azure Blob Storage + CDN for the skin only (pictures, backgrounds, icons). Static, published by deploy, browser read-only. Riddle data never goes to Blob. |
 
@@ -50,6 +50,7 @@ Sandboxes are riddle state, not TypeORM data and not a cache. Postgres remains t
 
 - xterm.js (`@xterm/xterm`) only draws the terminal. Each line goes to the server, and the server returns text.
 - The browser only ever receives output: columns and rows, terminal text, or a result message.
+- Limits: the engine adapters enforce a command timeout (SQLite: progress-handler step limit), a row cap, an output cap and a max input length. Over a limit → `rejected` with a message, not ruin.
 
 ## Architecture Patterns
 
@@ -81,7 +82,7 @@ Sandboxes are riddle state, not TypeORM data and not a cache. Postgres remains t
 - NestJS providers are singletons by default. The design relies on this for `ComponentFactory`, `GoalEvaluatorFactory`, `SandboxStore`, the `EventBus` adapter, the Redis client, and the SkillSwapper client.
 - Components are stateless singletons. All riddle state lives in sandboxes held by `SandboxStore`, keyed by session, riddle slug, run number, and restore count.
 - Constraint: `SandboxStore` is in process memory, so the demo runs one API instance. A lost sandbox (restart, other instance) is rebuilt from the seed by replaying the `ok` commands for that session, riddle, runNumber and restoreCount, in order, from `CommandRecord`. Read-only riddles rebuild from the seed alone.
-- `discardSession` runs on complete, ruin (resetSession), expire and reset. An idle sandbox (no command for 30 minutes, `SANDBOX_IDLE_MINUTES`) is evicted; replay rebuilds it if the player returns.
+- `discardSession` runs after commit on complete, ruin (resetSession), expire and reset. An idle sandbox (no command for 30 minutes, `SANDBOX_IDLE_MINUTES`) is evicted; replay rebuilds it if the player returns.
 
 ### Event-Driven: Hint Platform
 
@@ -140,7 +141,7 @@ flowchart TB
   Auth --> Sessions & Users & Scripts & Hints & Stats & Coach & SSH
   Sessions --> Components
   Components --> Engines
-  Sessions -- "invalidate" --> Stats
+  Sessions -- "StatsService.invalidate()" --> Stats
   Sessions -- "publish" --> Bus
   Bus -- "subscribe" --> Hints
   Stats -- "StatsCache port" --> Redis
@@ -165,7 +166,8 @@ flowchart TB
 ### Architecture Rules
 
 - Only repositories access Postgres. Each entity has one owning repository; other modules use the owner's exported repository and never TypeORM directly. Only the owning module writes.
-- Only the Stats module accesses Redis, through the `StatsCache` port.
+- Only the Stats module accesses Redis, through the `StatsCache` port. Other modules call `StatsService.invalidate()`.
+- Nothing outside Postgres is in a transaction. Sandbox discard or restore, events and stats invalidation run after commit.
 - Only Sessions publishes events, and only after commit. Only Hints subscribes.
 - Only Sessions calls components, always through `ComponentFactory`. Components never call Sessions, repositories, or other components.
 - Components hold no riddle-specific rules. Seed, policy, and goal come only from `Riddle.config`.
@@ -181,7 +183,7 @@ flowchart TB
 - One backend service: a modular monolith. Riddles (Components module: factories, kinds, engine adapters, `SandboxStore`) and Story (Scripts and Sessions modules) are modules inside it, not separate services. Hints, Stats, Coach, and the SkillSwapper adapter are modules too.
 - Why not microservices:
   - One team, one domain. No independent scaling or deploy need.
-  - Ruin-and-reset must be atomic: stop session, restore sandbox, write records, respond, in one transaction. Across services that becomes a distributed transaction or saga.
+  - Ruin-and-reset must be atomic: stop session and write records in one transaction, then discard the sandbox and respond. Across services that becomes a distributed transaction or saga.
   - A command is one in-process call (Sessions to component), not a network hop with retries, timeouts, and versioned contracts.
   - One deploy, one database, one log stream, one Swagger.
   - Module boundaries plus the Architecture Rules give the same separation.
@@ -192,7 +194,7 @@ flowchart TB
 - Every smart component has two halves, linked only by the riddle's `slug`. Brain: server-side (component, sandbox, policy, goal). Face: React (a picture in the room plus the window that opens when it is clicked).
 - The face belongs to the game's **skin**, not to a shared component package. A skin is one folder in the frontend repo: scene manifest, rooms, pictures, and windows. A new game draws its own skin and may copy windows from another.
 - The scene manifest maps each riddle `slug` to its room, picture, position, and window. It holds no answers, no order, no input fields.
-- Pictures light up, unlock, or show solved only from server state: the `opened` and `completed` lists in a command response, and `GET /sessions/:sid` on load. React never computes unlock order.
+- Pictures light up, unlock, or show solved only from server state: the `opened` and `alsoSolved` lists in a command response, and `GET /sessions/:sid` on load. React never computes unlock order.
 - Skin images (scene pictures, room backgrounds, icons) are static assets in Azure Blob Storage behind a CDN, one folder per script: `<scriptSlug>/...`, published by a deploy step from the frontend repo (`assets/<scriptSlug>/`). No upload API.
 - Riddle handouts (for example `Cibus_payment_try.pcap`) are riddle data, not skin. They must match the riddle's answers, so the API serves them from `Riddle.config.handouts`.
 - Secrets never go to Blob Storage or the manifest: no solutions, no decrypted pcap, no card number, no passwords. Those come only from server responses.
@@ -257,7 +259,7 @@ flowchart TB
 ### Transition Rules
 
 - Opening and closing windows, and click-outside, are local.
-- Every progress transition (picture lights up, room unlock, riddle solved, win) fires only on server state: `opened`, `completed`, `riddle.status`, `session.status`.
+- Every progress transition (picture lights up, room unlock, riddle solved, win) fires only on server state: `opened`, `alsoSolved`, `riddle.status`, `session.status`.
 - Room 2 unlocks when the `dana-login` solve response lists the Room 2 riddles in `opened`. The "open room" desktop icon is a local step after that response.
 
 ### Server-Driven States
@@ -266,7 +268,7 @@ flowchart TB
 | --- | --- | --- |
 | Ruined | Outcome `ruined` | Show message; offer reset (`POST /sessions/:sid/reset`); return to Room 1 hub with fresh state |
 | Expired | Outcome `expired`, or server `remainingMs` ≤ 0 | Show time-up; offer reset |
-| Stuck | Player action: `POST /sessions/:sid/struggles` | Open help panel; stay in current scene |
+| Stuck (later) | Player action: `POST /sessions/:sid/struggles` (later) | Open help panel; stay in current scene |
 
 ### Timing and Hints
 
@@ -278,8 +280,8 @@ flowchart TB
 ### Submissions
 
 - Every riddle uses one endpoint: `POST /sessions/:sid/riddles/:slug/commands {input}`.
-- Command kinds (`sql`, `terminal`) send `input` as a string. Answer kinds send `input` as an object of named fields, validated by the component's schema (for example `{hash}`, `{username, password}`, `{privateKey, encryptedPms, n}`).
-- Handouts: `GET /sessions/:sid/riddles/:slug/handouts/:name` (player, owner, riddle open).
+- Command kinds (`sql`, `terminal`) send `input` as a string. Answer kinds send `input` as an object of named fields, validated by the component's schema (for example `{hash}`, `{username, password}`, `{privateKey, encryptedPms, n}`). For `lock`, the fields are the field names in the riddle's seed (dana-login: `username`, `password`; door: its digits field).
+- Handouts: `GET /sessions/:sid/riddles/:slug/handouts/:name`. Served while the riddle is open or solved, not while locked. Roles: see API Routes.
 
 ## Component Responsibilities
 
@@ -287,16 +289,37 @@ flowchart TB
 | --- | --- |
 | Config | Environment variables only (`.env`, `.env.example`) |
 | Database | TypeORM `DataSource`, migrations, Script seeds, Unit of Work helper. Hosts no business logic |
-| Auth | `TokenVerifier` port with the Entra JWKS adapter (audience = API client id). Global guard. No passwords |
-| Roles (in Auth) | `@Roles(role)` + roles guard. Roles: `player`, `admin`. Every protected endpoint names one |
-| Users | `UserRepository`, user record and role. `GET /me` |
+| Auth | `TokenVerifier` port with the Entra JWKS adapter (audience = `ENTRA_API_CLIENT_ID`). Global guard. Role from Entra app roles (token `roles` claim), default `player`. No passwords |
+| Roles (in Auth) | `@Roles(role)` + roles guard. Roles: `player`, `admin`. Every protected endpoint names one (see API Routes) |
+| Users | `UserRepository`, user record and role. On the first authenticated request, upserts the User by `entraOid`. The role is copied to `User.role` on each sign-in, for reporting only. The first admin is assigned in Entra, not in our DB. `GET /me` |
 | Scripts | `ScriptRepository`, `RiddleRepository`. Scripts and riddle configs (seed, policy, goal, `opensAfter`), seeded by migration. Read-only at runtime |
 | Components | `ComponentFactory`, `GoalEvaluatorFactory`, `ScriptValidator`, the six kinds, engine adapters, `SandboxStore` |
-| Sessions | Lifecycle, timer, command pipeline (policy, execute, invariant, goal, `solvedBy`), ruin and reset, progress, per-riddle timing, handouts, struggles. Publishes `RiddleSolved` |
+| Sessions | Lifecycle, timer, command pipeline (policy, execute, invariant, goal, `solvedBy`), ruin and reset, progress, per-riddle timing, handouts, struggles (later). Publishes `RiddleSolved`. Calls `StatsService.invalidate()` |
 | Hints (later) | `HintRepository`. `HintHandler` is the only event subscriber. `GET /sessions/:sid/hints` |
-| Stats (later) | `StatsReadRepository`, `StatsCache` port. Admin statistics. Only Redis user |
+| Stats (later) | `StatsReadRepository`, `StatsCache` port, `StatsService.invalidate()`. Admin statistics. Only Redis user |
 | SkillSwapper (later) | `SkillSwapperPort` and `SkillSwapperAdapter`, read-only client of the other team's API; they set the contract. `GET /sessions/:sid/helpers`. Stores nothing |
 | Coach (later) | Clippy board: next small step, never a solution. Reads through Sessions repositories |
+
+### API Routes
+
+Roles: `player`, `admin`. Admin has every player right.
+
+| Path | Role | Owner check | Demo or later |
+| --- | --- | --- | --- |
+| `GET /me` | any signed-in | – | Demo. Returns user, role, `activeSessionId` |
+| `POST /sessions` | player | – | Demo |
+| `GET /sessions/:sid` | player | owner | Demo |
+| `POST /sessions/:sid/riddles/:slug/commands` | player | owner | Demo |
+| `GET /sessions/:sid/riddles/:slug/handouts/:name` | player | owner | Demo |
+| `POST /sessions/:sid/reset` | player | owner | Demo |
+| `GET /sessions/:sid/hints` | player | owner | Later |
+| `POST /sessions/:sid/struggles` | player | owner | Later |
+| `POST /sessions/:sid/coach` | player | owner | Later (Clippy) |
+| `GET /sessions/:sid/helpers` | player | owner | Later (SkillSwapper) |
+| `GET /admin/stats` | admin | – | Later |
+| `GET /api/docs` | none | – | Only when `SWAGGER_ENABLED=true` (true in dev, false in production) |
+
+- Errors: `400` body fails DTO validation (not the `rejected` outcome); `401` no or invalid token; `403` wrong role; `404` session not found or not the owner, unknown slug, unknown handout; `409` session not active, or riddle not open (for commands). `expired` stays a 200 outcome. An invalid Script fails boot, so it never happens at runtime.
 
 ## Data Model
 
@@ -322,9 +345,9 @@ erDiagram
 
   User {
     uuid id PK
-    string entraOid UK
+    string entraOid UK "upsert key on first request"
     string displayName
-    string role "player | admin"
+    string role "player | admin, copied from Entra roles claim"
     timestamp createdAt
   }
   Script {
@@ -388,8 +411,7 @@ erDiagram
     uuid sessionId FK
     uuid riddleId FK
     int runNumber "unique with sessionId, riddleId"
-    string kind
-    string content
+    string content "config.hint text, copied when earned"
     timestamp earnedAt
   }
 ```
@@ -400,8 +422,8 @@ erDiagram
 - Unlock order is data: on a solve, the server opens every Riddle whose `opensAfter` is the solved riddle. Sessions never hard-codes order.
 - Cross-riddle completion is data: a riddle whose goal is `solvedBy` is solved when the named riddle emits the named signal.
 - What a ruin does is data: `Script.onRuin`. `resetSession` ruins the session; `resetRiddle` restores that riddle's sandbox, increments its `restoreCount`, and leaves it open. The ruin is recorded only as a CommandRecord with outcome `ruined`.
-- `runNumber` starts at 1 and increments only on session reset. A wrong answer is not a new run; it is a CommandRecord with outcome `rejected`.
-- `Hint` belongs to the later Hint Platform. Maximum one hint per riddle per run.
+- `runNumber` starts at 1 and increments only on session reset. A wrong answer is not a new run; it is a CommandRecord with outcome `rejected` (see Outcomes).
+- `Hint` belongs to the later Hint Platform. Maximum one hint per riddle per run. Hints are never deleted.
 - Solve time = `solvedAt` − `openedAt` (from `SessionProgress`), per run.
 - Tries and rejected commands per riddle are counted from `CommandRecord` per session, riddle, and runNumber.
 - `subject` is the skill the riddle tests.
@@ -417,8 +439,8 @@ erDiagram
 | `seed` | Starting sandbox: tables and rows, files and commits, or the expected values for an answer check |
 | `policy` | `allow` and `ruin` patterns, matched in order (`ruin` first). Anything that matches neither is rejected. Optional `invariant`. Answer kinds default to allow all. Patterns are matched against the parsed input, not raw text (see Command Pipeline step 2) |
 | `goal` | `{type, ...}`: what solves the riddle. Interpreted by a goal evaluator |
-| `handouts` | Names of files stored in the backend repo at `seeds/<scriptSlug>/handouts/`, produced by the seed builder. Served only to the session owner while the riddle is open |
-| `hint` | Note earned on solve (later Hint Platform) |
+| `handouts` | Names of files stored in the backend repo at `seeds/<scriptSlug>/v<version>/handouts/`, produced offline by the seed builder and committed. Served only to the session owner while the riddle is open or solved, not while locked |
+| `hint` | `{ text }`: note earned on solve; the text is copied into the Hint row (later Hint Platform) |
 
 ### Goal Types
 
@@ -518,7 +540,7 @@ classDiagram
   class SqlComponent {
     +kind = sql
     +engine = SqlEngine port
-    +signals = rows
+    +signals = none
   }
   class TerminalComponent {
     +kind = terminal
@@ -569,7 +591,7 @@ classDiagram
   GoalEvaluatorFactory --> GoalEvaluator : creates by type
   SessionsService --> ComponentFactory
   SessionsService --> GoalEvaluatorFactory
-  SessionsService --> SandboxStore : restore on ruin and reset
+  SessionsService --> SandboxStore : discard on ruin and reset
   SandboxStore ..> SmartComponent : build(seed)
   ScriptValidator ..> ComponentFactory : schemas, signals
 ```
@@ -580,19 +602,29 @@ Sessions runs the same pipeline for every kind. No step knows which riddle it is
 
 | Step | Rule |
 | --- | --- |
-| 1. Guard | Lock the session: one command per session at a time (per-session mutex in SandboxStore, and `SELECT … FOR UPDATE` on the Session row inside the transaction). Owner, session active, riddle open, `now < deadlineAt`. Past the deadline: session expired, command not run |
+| 1. Guard | Lock the session: one command per session at a time (per-session mutex in SandboxStore). The transaction opens here with `SELECT … FOR UPDATE` on the Session row. Owner, session active, riddle open, `now < deadlineAt`. Not found or not the owner, or unknown slug → 404; session not active or riddle not open → 409. Past the deadline: `expired`, command not run |
 | 2. Parse | `component.parseInput(raw)`. Invalid shape → `rejected`. `terminal`: one command split into argv; `;`, `&&`, `\|\|`, `\|`, `>`, `<`, backticks and `$(` are rejected. `sql`: parsed into statements; more than one statement is rejected; policy matches the statement type |
-| 3. Policy | `component.classify(state, input, config.policy)`. `reject` → `rejected`, no change. `ruin` → ruin path, command not run |
+| 3. Policy | `component.classify(state, input, config.policy)`. A policy `reject` → `rejected`, no change. `ruin` → ruin path, command not run |
 | 4. Execute | `component.execute(state, input)` on the sandbox; returns output and signals |
-| 5. Invariant | If `config.policy.invariant` no longer holds, take the ruin path. The restore discards the effect |
-| 6. Goal | `GoalEvaluatorFactory.create(goal.type).isMet(goal, {state, input, signals})` |
-| 7. solvedBy | Every open riddle whose goal is `solvedBy` this slug with an emitted signal is solved too |
-| 8. Commit | One transaction: progress updates (`solvedAt`, `openedAt` via `opensAfter`, `result`), CommandRecord. After commit: publish `RiddleSolved` per solved riddle |
-| 9. Respond | Outcome, output, `riddle`, `opened`, `completed`, `session` |
+| 5. Invariant | If `config.policy.invariant` no longer holds, take the ruin path. The discard removes the effect |
+| 6. Goal | `GoalEvaluatorFactory.create(goal.type).isMet(goal, {state, input, signals})`. Answer kind with goal not met → `rejected` |
+| 7. solvedBy | Every open riddle whose goal is `solvedBy` this slug with an emitted signal is solved too. Runs even when this riddle's outcome is `rejected` |
+| 8. Commit | The transaction from step 1 commits: progress updates (`solvedAt`, `openedAt` via `opensAfter`, `result`), session writes, CommandRecord. Session writes: `completeOn` riddle solved → status `completed` + `finishedAt`; `resetSession` ruin → status `ruined` + `finishedAt`; `resetRiddle` ruin → `restoreCount`++. After commit: sandbox discard or restore, publish `RiddleSolved` per solved riddle, stats invalidate. If the transaction fails, discard that riddle's sandbox (it rebuilds by replay) |
+| 9. Respond | Outcome, output, `riddle`, `opened`, `alsoSolved`, `session` |
+
+#### Outcomes
+
+| Outcome | Meaning |
+| --- | --- |
+| `ok` | Command ran, this riddle not solved (`sql` and `terminal`) |
+| `rejected` | Refused at Parse or Policy (no sandbox change), or an answer kind (`cracker:*`, `lock`) whose goal is not met |
+| `solved` | This riddle's goal met |
+| `ruined` | Ruin path taken |
+| `expired` | Deadline passed, command not run |
 
 ### Script Validation
 
-- `ScriptValidator` runs at boot and in CI. A Script that fails does not load.
+- At boot, `ScriptValidator` runs the structural checks below (schemas, references, cycles). A Script that fails does not load.
 - Checks:
   - every `kind` is registered;
   - `config.seed` matches the kind's `seedSchema`;
@@ -602,15 +634,20 @@ Sessions runs the same pipeline for every kind. No step knows which riddle it is
   - no unlock cycles;
   - every riddle is reachable from a start riddle;
   - `solvedBy.signal` and `emits.signal` are in the target kind's declared `signals`;
-  - `completeOn` names a riddle.
-- Linked answers: values shared between riddles are generated from one source file per Script by a seed builder at migration time, not typed twice.
-- Winning path: the validator also runs the Script's winning path (a `solution` list of inputs per riddle) against fresh sandboxes and requires the session to end `completed`. `solution` is stored with the seed builder source only, never in `Riddle.config` and never in the client.
+  - `completeOn` names a riddle;
+  - a `solvedBy` dependent opens no later than its target;
+  - every named handout file exists;
+  - for `lock`, the seed fields exist and match the goal.
+- Linked answers: values shared between riddles are generated from one source file per Script by a seed builder, not typed twice. The seed builder runs offline and deterministically, and commits both the seed JSON and the handout files to the backend repo. Migrations only insert the committed seed data.
+- Winning path: in CI only, the validator also runs the Script's winning path (the seed builder's `solution` list of inputs per riddle) against fresh sandboxes and requires the session to end `completed`. `solution` is stored with the seed builder source only, never in `Riddle.config` and never in the client.
 
 ### Component Kinds
 
 - **`sql`:** builds an in-memory SQLite from `seed.tables`. Read-only connection unless the policy allows writes; the read-only connection stays as a second guard behind the policy. Output: `{columns, rows}`.
 - **`terminal`:** builds a memfs filesystem and an isomorphic-git repository from `seed.fs` and `seed.git`. Runs one shell line per command. Output: text.
 - **Answer kinds** (`cracker:hash`, `cracker:rsa`, `cracker:tls`, `lock`): stateless sandbox holding the expected values from the seed. They compare or compute with the crypto engine and never reverse a hash. Policy defaults to allow, so they never ruin. Output: a result message or computed value (for example the decrypted PMS).
+- **`lock` input:** the input fields are the field names in the riddle's seed (dana-login: `username`, `password`; door: its digits field).
+- **Limits:** every kind runs under the engine limits (see Sandbox Engines). Over a limit → `rejected` with a message, not ruin.
 
 ## Session Lifecycle
 
@@ -627,10 +664,12 @@ flowchart TB
   S0 --> A
   A -- "completeOn riddle solved" --> C
   A -- "ruin, onRuin = resetSession" --> R
-  A -- "ruin, onRuin = resetRiddle<br/>riddle restored" --> A
   A -- "request after deadlineAt" --> E
   R -- "reset" --> A
   E -- "reset" --> A
+  C -- "reset" --> A
+  N["ruin, onRuin = resetRiddle:<br/>riddle restored, session stays active"]
+  A -.- N
   classDef ui fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:2px
   classDef store fill:#15803d,stroke:#14532d,color:#ffffff,stroke-width:2px
   classDef bad fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:2px
@@ -643,15 +682,21 @@ flowchart TB
 
 ### Lifecycle Steps
 
-- **Start:** `POST /sessions {scriptSlug}`. `deadlineAt` = now + script duration. Riddles with `opensAfter` null open (`openedAt` stamped), the rest are locked. Sandboxes are built on first command.
-- **Read:** `GET /sessions/:sid` (player, owner): session status, `deadlineAt`, `remainingMs`, and every riddle's status by slug, with `result` for solved riddles. Each riddle also returns `kind` and `inputFields` (from the kind's `inputSchema`, names and types only).
+- **Start:** `POST /sessions {scriptSlug}`. One active session per user per script: a partial unique index on (`userId`, `scriptId`) where status = `active`. The server first applies lazy expiry; if an active session remains, it returns that one (200) instead of creating a new one. `deadlineAt` = now + script duration. Riddles with `opensAfter` null open (`openedAt` stamped), the rest are locked. Sandboxes are built on first command.
+- **Read:** `GET /sessions/:sid`: session status, `deadlineAt`, `remainingMs`, and every riddle's status by slug, with `result` for solved riddles. Each riddle also returns `kind` and `inputFields` (names and types only). For a `lock` riddle they come from the seed; for every other kind, from the kind's `inputSchema`. `GET /me` returns `activeSessionId`, so a new tab can resume.
 - **Timer:** server-owned. Every session request checks `deadlineAt`. Past it: session expired, command not run. No scheduler. A session is expired when `now ≥ deadlineAt`, whether or not a request marked it. Reads (`GET /sessions/:sid`, stats) treat an `active` session past `deadlineAt` as expired; the next request writes `expired` and `finishedAt = deadlineAt`.
 - **Command:** `POST /sessions/:sid/riddles/:slug/commands`. Runs the Command Pipeline.
-  - Response: `outcome` (`ok`, `solved`, `rejected`, `ruined`, `expired`), `output`, `riddle {slug, status, openedAt, solvedAt}`, `opened [slugs]`, `completed [slugs]`, `session {status, deadlineAt, remainingMs}`.
+  - Response: `outcome` (`ok`, `solved`, `rejected`, `ruined`, `expired`; see Outcomes), `output`, `riddle {slug, status, openedAt, solvedAt}`, `opened [slugs]`, `alsoSolved [slugs]`, `session {status, deadlineAt, remainingMs}`.
+  - `opened`: riddles opened by this command. `alsoSolved`: other riddles solved in this command via `solvedBy`.
+  - Every command that reaches Parse writes a CommandRecord, so it counts as a try. A command refused before Parse (400, 404, 409, `expired`) writes none.
 - **Solve:** one transaction marks the riddle solved (`solvedAt`, `result`), solves its `solvedBy` dependents, opens the next riddle(s) (`openedAt`), and records the command. After commit, publish `RiddleSolved` for each solved riddle.
-- **Ruin:** request/response, not an event. One transaction: command recorded, sandbox restored from seed, and then by `Script.onRuin` either the session is ruined (`finishedAt`) and the stats cache cleared, or only that riddle's `restoreCount` is incremented and it stays open. HTTP 200 with outcome `ruined`, not an error.
-- **Reset:** `POST /sessions/:sid/reset`. Discards all sandboxes, returns progress to the start state, starts new SessionProgress rows for the new runNumber (earlier runs keep their timings), clears earned hints, increments runNumber, restarts the timer.
-- **Complete:** the riddle named by `Script.completeOn` solved → session completed, stats cache cleared.
+- **Ruin:** request/response, not an event. By `Script.onRuin`:
+  - `resetSession`: commit (status `ruined`, `finishedAt`, CommandRecord `ruined`), then `SandboxStore.discardSession`, then stats invalidate, then respond.
+  - `resetRiddle`: commit (`restoreCount`++, CommandRecord `ruined`), then discard the old sandbox key, then respond. The riddle stays open; the next `getOrBuild` builds from the seed under the new key.
+  - HTTP 200 with outcome `ruined`, not an error.
+- **Reset:** `POST /sessions/:sid/reset`. Allowed from `ruined`, `expired` or `completed`. From `active`: 409 with the current state, which also makes a double click harmless. Takes the same per-session lock and Session `FOR UPDATE`. Returns progress to the start state, starts new SessionProgress rows for the new runNumber (earlier runs keep their timings), increments runNumber, sets `startedAt` = now, recomputes `deadlineAt` and clears `finishedAt`. After commit, discards all sandboxes. Earned hints are kept.
+- **Complete:** the riddle named by `Script.completeOn` solved → session completed.
+- **Stats:** Sessions calls `StatsService.invalidate()` after commit on every session status change: start, reset, complete, ruin, expire write. Best-effort: errors are logged and never roll back. Until Admin Statistics ships it is a no-op, so the demo does not depend on a Later Feature.
 
 ### Per-Riddle Timing
 
@@ -675,9 +720,10 @@ sequenceDiagram
   participant Store as SandboxStore
   participant SQL as SqlComponent
 
-  UI->>Auth: POST /riddles/idan-db/commands {input: SELECT ... employees ... 'Dana%'}
+  UI->>Auth: POST /sessions/:sid/riddles/idan-db/commands {input: SELECT ...}
   Auth->>Auth: Entra token (JWKS), role player
   Auth->>Svc: command(sid, idan-db, input)
+  Svc->>Repo: begin tx + lock Session (FOR UPDATE)
   Svc->>Repo: SessionRepository + ProgressRepository load
   Svc->>Svc: owner, active, open, now < deadlineAt
   Svc->>F: create(sql)
@@ -685,11 +731,11 @@ sequenceDiagram
   Store-->>Svc: SQLite built from seed
   Svc->>SQL: classify(policy) → allow
   Svc->>SQL: execute
-  SQL-->>Svc: {columns, rows}, signals []
+  SQL-->>Svc: {columns, rows}, no signals
   Svc->>SQL: checkInvariant(schemaUnchanged) → true
   Svc->>Svc: goal solvedBy hash-cracker → not met
-  Svc->>Repo: CommandRecordRepository insert (ok)
-  Svc-->>UI: 200 {outcome: ok, output, riddle, opened: [], completed: [], session}
+  Svc->>Repo: CommandRecordRepository insert (ok), commit
+  Svc-->>UI: 200 {outcome: ok, output, riddle, opened: [], alsoSolved: [], session}
   UI->>UI: render result grid
 ```
 
@@ -704,26 +750,27 @@ sequenceDiagram
   participant Repo as Repositories (Unit of Work)
   participant Store as SandboxStore
   participant Git as TerminalComponent
-  participant Stats as StatsCache port
+  participant Stats as StatsService
 
-  UI->>Auth: POST /riddles/nethanel-git/commands {input: git commit --allow-empty -m x}
+  UI->>Auth: POST /sessions/:sid/riddles/nethanel-git/commands {input: git commit ...}
   Auth->>Svc: token + role player OK
+  Svc->>Repo: begin tx + lock Session
   Svc->>Repo: load + checks (as Sequence 1)
   Svc->>Store: getOrBuild(sid, nethanel-git, run, restores)
   Svc->>Git: classify(policy)
   Git-->>Svc: ruin (matches git commit*)
   Note over Svc,Git: Command is not executed
-  Svc->>Repo: one transaction: session ruined (onRuin = resetSession), finishedAt, CommandRecord (ruined)
-  Svc->>Store: restore(sid, nethanel-git, run, restores) → seed repository
-  Svc->>Stats: invalidate()
-  Svc-->>UI: 200 {outcome: ruined, output: repository restored, session: ruined}
+  Svc->>Repo: commit: session ruined (resetSession), finishedAt, CommandRecord (ruined)
+  Svc->>Store: after commit: discardSession(sid)
+  Svc->>Stats: invalidate() (best-effort)
+  Svc-->>UI: 200 {outcome: ruined, output: history changed: session ruined, reset to try again, session: ruined}
   UI->>UI: term.write(output), ruined state
   Note over UI,Svc: Player may call POST /sessions/:sid/reset
 ```
 
-- Variant: a command that passes the policy but fails `checkInvariant` takes the same path from the transaction step. The restore discards its effect.
+- Variant: a command that passes the policy but fails `checkInvariant` takes the same path from the commit step. The discard removes its effect.
 
-### Sequence 3: Hash Solved, SQL Completed, Hint Handler
+### Sequence 3: Hash Solved, SQL Solved, Hint Handler
 
 ```mermaid
 sequenceDiagram
@@ -736,17 +783,18 @@ sequenceDiagram
   participant Bus as EventBus port
   participant H as HintHandler
 
-  UI->>Auth: POST /riddles/hash-cracker/commands {input: {hash}}
+  UI->>Auth: POST /sessions/:sid/riddles/hash-cracker/commands {input: {hash}}
   Auth->>Svc: token + role player OK
+  Svc->>Repo: begin tx + lock Session
   Svc->>Repo: load + checks (as Sequence 1)
   Svc->>Cr: parseInput, classify → allow
   Svc->>Cr: execute: compare to seed sha256
   Cr-->>Svc: output: password message, signals [match]
   Svc->>Svc: goal emits match → hash-cracker solved
   Svc->>Svc: idan-db goal solvedBy hash-cracker match → idan-db solved
-  Svc->>Repo: one transaction: both solved + solvedAt, dana-login opened + openedAt, CommandRecord (solved)
+  Svc->>Repo: commit: both solved + solvedAt, dana-login opened + openedAt, CommandRecord (solved)
   Svc->>Bus: after commit: RiddleSolved for hash-cracker and idan-db
-  Svc-->>UI: 200 {outcome: solved, output, completed: [idan-db], opened: [dana-login], session}
+  Svc-->>UI: 200 {outcome: solved, output, alsoSolved: [idan-db], opened: [dana-login], session}
   Note over UI,Svc: Request does not wait for the hint
   Bus-)H: RiddleSolved
   H->>Repo: RiddleRepository read config.hint
@@ -769,12 +817,12 @@ Specified, not built. Each is tied to exactly one mechanism. The demo does not d
 
 | Feature | Mechanism | Behavior |
 | --- | --- | --- |
-| Hint Platform | **Event bus** (the one event-driven feature) | On riddle solve, `RiddleSolved` is published; `HintHandler` saves the configured hint (max one per riddle per run). Read: `GET /sessions/:sid/hints`. Reset clears hints |
-| Admin Statistics | **Redis** (the one cached feature) | `GET /admin/stats` (admin). Reads `stats:v1` through `StatsCache`; on miss, aggregates through `StatsReadRepository` and stores with a safety TTL. Cleared directly when a session completes, is ruined, or expires. Redis down → serve from Postgres. Aggregates count `active` past `deadlineAt` as expired, so a missed invalidation cannot keep a stale status |
-| Clippy Board | Request/response | Coach API: given session, hints, and struggle subject, returns the next small step. Never a solution. Reads struggles through `StruggleRepository` |
-| SkillSwapper | Request/response, **Adapter** | `SkillSwapperAdapter` implements `SkillSwapperPort` over the other team's API (their contract). `GET /sessions/:sid/helpers` (player, owner): server picks skills from slowest riddles and struggles, calls their API synchronously, returns people. Nothing stored |
+| Hint Platform | **Event bus** (the one event-driven feature) | On riddle solve, `RiddleSolved` is published; `HintHandler` saves the configured hint (max one per riddle per run). Read: `GET /sessions/:sid/hints` returns only the hints for the session's current runNumber. Hints are never deleted |
+| Admin Statistics | **Redis** (the one cached feature) | `GET /admin/stats`. Reads `stats:v1` through `StatsCache`; on miss, aggregates through `StatsReadRepository` and stores with a TTL (`STATS_CACHE_TTL_SECONDS`, 60). Invalidated through `StatsService.invalidate()`, best-effort after commit, on every session status change, including when a request writes `expired`. Errors are logged and never roll back. Redis down → serve from Postgres; staleness after Redis recovers is bounded by the TTL. Aggregates count `active` past `deadlineAt` as expired, so the TTL plus that rule covers an unwritten expiry |
+| Clippy Board | Request/response | Coach API (`POST /sessions/:sid/coach`): given session, hints, and struggle subject, returns the next small step. Never a solution. Reads struggles through `StruggleRepository` |
+| SkillSwapper | Request/response, **Adapter** | `SkillSwapperAdapter` implements `SkillSwapperPort` over the other team's API (their contract). `GET /sessions/:sid/helpers`: server picks skills from slowest riddles and struggles (subject → skill from a static map in the adapter), calls their API synchronously (`SKILLSWAPPER_TIMEOUT_MS`, 5000), returns people. On failure: log and store nothing; the next struggle retries. Nothing stored |
 
-**Admin statistics aggregates:** sessions by status, completion rate, average completion time, ruins per component kind, struggles per subject, and possibly per-riddle solve times.
+**Admin statistics aggregates:** sessions by status, completion rate, average completion time (per run, from SessionProgress: the run's first `openedAt` to the `completeOn` riddle's `solvedAt` for that runNumber; not `Session.startedAt`, because reset reuses the Session row), ruins per component kind, struggles per subject, and possibly per-riddle solve times.
 
 **Request/response only:** ruin and reset, `solvedBy` completion, stats cache invalidation, session completion, struggle recording, SkillSwapper.
 
@@ -783,13 +831,15 @@ Specified, not built. Each is tied to exactly one mechanism. The demo does not d
 - `EventBus` port with an in-process `@nestjs/event-emitter` adapter.
 - One event: `RiddleSolved { sessionId, riddleId, runNumber, solvedAt }`.
 - One publisher: SessionsService, after the solve transaction commits.
-- One subscriber: `HintHandler`. Reads `Riddle.config.hint`; none → stop; otherwise upsert one `Hint` per session, riddle, and runNumber.
+- One subscriber: `HintHandler`, an async listener (`{async: true}`), so the request does not wait. Errors are caught and logged; startup recovery is the only retry.
+- `HintHandler` reads `Riddle.config.hint` (`{ text }`); none → stop; otherwise upserts one `Hint` per session, riddle, and runNumber, with the text copied in.
 - Startup recovery: re-publish for solved progress rows with hint config and no `Hint` row.
-- Read path: `GET /sessions/:sid/hints` after a solved outcome; eventually consistent.
+- Read path: `GET /sessions/:sid/hints` after a solved outcome; only the current runNumber's hints; eventually consistent.
 
 ### Struggles
 
-- `POST /sessions/:sid/struggles` (player, owner): plain record of the "I'm stuck" action.
+- Later Feature, owned by Sessions.
+- `POST /sessions/:sid/struggles {slug}`: plain record of the "I'm stuck" action. The riddle must be open, otherwise 409.
 - `Struggle(id, sessionId, riddleId, subject, recordedAt)`; subject set by the server from the riddle.
 - No event. Read by Clippy and the SkillSwapper helper lookup.
 
@@ -821,7 +871,7 @@ flowchart TB
     SQLC["SQL console"]
     SQLCALL["POST commands · idan-db<br/>rows"]
     HASH["Hash-Cracker"]
-    HASHCALL["POST commands · hash-cracker<br/>password message<br/>completed: idan-db"]
+    HASHCALL["POST commands · hash-cracker<br/>password message<br/>alsoSolved: idan-db"]
     HINT1[/"Hint (later): password note"/]
     LOGIN["Dana's computer"]
     LOGINCALL["POST commands · dana-login<br/>opened: Room 2 riddles"]
@@ -845,7 +895,7 @@ flowchart TB
     GIT["Git terminal"]
     GITCALL["POST commands · nethanel-git<br/>git log · git show"]
     RSA["RSA decryptor"]
-    RSACALL["POST commands · rsa-decryptor<br/>keyMatched: completed nethanel-git<br/>decrypted: PMS"]
+    RSACALL["POST commands · rsa-decryptor<br/>keyMatched: alsoSolved nethanel-git<br/>decrypted: PMS"]
     TLS["TLS decryptor"]
     TLSCALL["POST commands · tls-decryptor<br/>solved, decrypted records"]
     HINT2[/"Hint (later): card-number note"/]
@@ -863,14 +913,14 @@ flowchart TB
     GITCALL -- "private key" --> RSA
     PCAPCALL -- "encrypted PMS + N" --> RSA
     RSACALL -- "decrypted PMS" --> TLS
-    PCAPCALL -- "client random" --> TLS
+    PCAPCALL -- "client + server random" --> TLS
     DPCAP -- "card digits" --> LOCK
   end
 
   WIN(["WIN"])
   LOCKCALL --> WIN
 
-  NOTE["RUINED · EXPIRED · STUCK<br/>reachable from any screen<br/>(see Server-Driven States)"]
+  NOTE["RUINED · EXPIRED · STUCK (later)<br/>reachable from any screen<br/>(see Server-Driven States)"]
 
   classDef ui fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:2px
   classDef server fill:#334155,stroke:#0f172a,color:#ffffff,stroke-width:2px
@@ -889,12 +939,12 @@ flowchart TB
 | # | Room | Screen | Player does | Server call | Outcome | Opens next |
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | 1 | SQL console | SELECT employees by name → Dana's username; SELECT logs where username = Dana's and type = 'auth' → hash | POST commands (idan-db) | ok, rows (ruined on DROP or write) | – |
-| 2 | 1 | Hash-Cracker | Paste hash | POST commands (hash-cracker) | solved, message with Dana's password; `completed: [idan-db]` | dana-login |
+| 2 | 1 | Hash-Cracker | Paste hash | POST commands (hash-cracker) | solved, message with Dana's password; `alsoSolved: [idan-db]` | dana-login |
 | 3 | 1 | Dana's computer | Username + password, Login | POST commands (dana-login) | solved / rejected | nethanel-git, rsa-decryptor |
-| 4 | 2 | Encrypted pcap preview | Download; copy client random, encrypted PMS (CKE), modulus N (certificate) | GET handouts (rsa-decryptor) | – | – |
-| 5 | 2 | Git terminal | `git log`; `git show <previous commit>` → private key | POST commands (nethanel-git) | ok (ruined on commit or write) | – |
-| 6 | 2 | RSA decryptor | Private key + encrypted PMS + N, Decrypt | POST commands (rsa-decryptor) | Key match → `completed: [nethanel-git]`; all correct → solved, decrypted PMS | tls-decryptor |
-| 7 | 2 | TLS decryptor | PMS + client random, Decrypt | POST commands (tls-decryptor) | solved, decrypted App-Data records in output | door |
+| 4 | 2 | Encrypted pcap preview | Download; copy client random, server random, encrypted PMS (CKE), modulus N (certificate) | GET handouts (rsa-decryptor) | – | – |
+| 5 | 2 | Git terminal | `git log`; `git show <previous commit>` → private key | POST commands (nethanel-git) | ok (ruined on `git commit/reset/rebase/checkout/branch -D`, `rm`) | – |
+| 6 | 2 | RSA decryptor | Private key + encrypted PMS + N, Decrypt | POST commands (rsa-decryptor) | Key match only → `rejected` + `alsoSolved: [nethanel-git]`; all correct → solved, decrypted PMS | tls-decryptor |
+| 7 | 2 | TLS decryptor | PMS + client random + server random, Decrypt | POST commands (tls-decryptor) | solved, decrypted App-Data records in output | door |
 | 8 | 2 | Decrypted pcap view | Find Nathaniel's card in App-Data records | None (TLS output; `GET /sessions/:sid` after reload) | – | – |
 | 9 | 2 | Final lock | Enter card digits | POST commands (door) | solved → session completed | WIN |
 
@@ -925,13 +975,14 @@ flowchart TB
 | 3 | dana-login | lock | auth | hash-cracker | username, password | allow all | `emits match` |
 | 4 | nethanel-git | terminal | git | dana-login | memfs repo, commit 1 adds the private key, commit 2 removes it: "Security fix: Removed private key from repository." | allow `git log/show/status/diff`, `ls`, `cat`; ruin `git commit/reset/rebase/checkout/branch -D`, `rm`; invariant `historyUnchanged` | `solvedBy` rsa-decryptor `keyMatched` |
 | 5 | rsa-decryptor | cracker:rsa | rsa | dana-login | private key, N, encrypted PMS; handout `Cibus_payment_try.pcap` | allow all | `emits decrypted` |
-| 6 | tls-decryptor | cracker:tls | tls | rsa-decryptor | PMS, client random, encrypted App-Data records | allow all | `emits decrypted` |
+| 6 | tls-decryptor | cracker:tls | tls | rsa-decryptor | PMS, client random, server random, encrypted App-Data records | allow all | `emits decrypted` |
 | 7 | door | lock | tls | tls-decryptor | Nathaniel's card digits | allow all | `emits match` |
 
 - **Room 2:** riddles 4 and 5 open together. Riddle 4 is solved by a matching private key on riddle 5, not by a terminal command.
-- **RSA partial answer:** a matching key with a wrong PMS or N emits `keyMatched` only. nethanel-git is completed, rsa-decryptor stays open, and the outcome is `rejected` with a message.
+- **RSA partial answer:** a matching key with a wrong PMS or N emits `keyMatched` only. Step 7 (`solvedBy`) still runs on that signal: nethanel-git is solved, rsa-decryptor stays open, and the response is `rejected` with `alsoSolved: [nethanel-git]` and a message.
+- **Lock inputs:** a `lock` riddle's input fields are its seed field names (dana-login: `username`, `password`; door: its digits field).
 - **Hints (later):** hash-cracker → note with Dana's password. tls-decryptor → note with the card number.
-- **Linked answers:** shared values (Dana's username and password, the logs sha256, the private key in git and in rsa-decryptor, N and encrypted PMS in the pcap handout and rsa seed, PMS and client random for TLS, the card digits in the TLS records and door) are generated from one source file per Script by a seed builder at migration time, not typed twice. The winning path is checked by `ScriptValidator` (see Script Validation).
+- **Linked answers:** shared values (Dana's username and password, the logs sha256, the private key in git and in rsa-decryptor, N and encrypted PMS in the pcap handout and rsa seed, PMS and client and server random for TLS, the card digits in the TLS records and door) are generated from one source file per Script by a seed builder, not typed twice. It runs offline and deterministically and commits the seed JSON and handout files to the backend repo; migrations only insert that data. The winning path is checked by `ScriptValidator` in CI (see Script Validation).
 
 ## Escape Room Skin (Demo)
 
@@ -964,8 +1015,9 @@ assets/escape-room/    pictures, backgrounds, icons → Blob Storage
 
 ## Environment Configuration
 
-- Backend `.env.example` placeholders: `DATABASE_URL`, `ENTRA_TENANT_ID`, `ENTRA_API_CLIENT_ID`, `ENTRA_AUDIENCE`, `REDIS_URL`, `SKILLSWAPPER_BASE_URL`, `SKILLSWAPPER_API_KEY`, `PORT`, `SANDBOX_IDLE_MINUTES` (30).
-- Frontend `.env.example` placeholders: `VITE_API_BASE_URL`, `VITE_ASSETS_BASE_URL`, `VITE_ENTRA_CLIENT_ID`, `VITE_ENTRA_TENANT_ID`.
+- Backend `.env.example` placeholders: `DATABASE_URL`, `ENTRA_TENANT_ID`, `ENTRA_API_CLIENT_ID` (also the token audience), `REDIS_URL`, `STATS_CACHE_TTL_SECONDS` (60), `SKILLSWAPPER_BASE_URL`, `SKILLSWAPPER_API_KEY`, `SKILLSWAPPER_TIMEOUT_MS` (5000), `PORT`, `CORS_ORIGINS`, `SWAGGER_ENABLED` (true in dev, false in production), `SANDBOX_IDLE_MINUTES` (30), `SANDBOX_COMMAND_TIMEOUT_MS` (2000), `SANDBOX_MAX_ROWS` (500), `SANDBOX_MAX_OUTPUT_BYTES` (65536), `COMMAND_MAX_INPUT_LENGTH` (2000).
+- Frontend `.env.example` placeholders: `VITE_API_BASE_URL`, `VITE_ASSETS_BASE_URL`, `VITE_ENTRA_CLIENT_ID`, `VITE_ENTRA_TENANT_ID`, `VITE_ENTRA_API_SCOPE`.
+- Local rebuild: `npm run db:reset` (drop, migrate, seed).
 - No secrets in git.
 
 ## Resolved Conflicts
