@@ -26,11 +26,6 @@ li{font-size:32px;line-height:1.35;margin-bottom:26px;padding-left:34px;position
 li::before{content:"";position:absolute;left:0;top:.5em;width:12px;height:12px;border-radius:2px;background:var(--acc)}
 li small{display:block;font-size:24px;color:var(--muted);margin-top:4px}
 code,.mono{font-family:var(--mono);font-size:.9em;color:#c9d6e2}
-/* Screenshot frame: to use a real image, put <img src="shots/x.png" alt=""> inside the div and delete the <span>. */
-.shot{flex:1 1 54%;border:2px dashed var(--line);border-radius:14px;display:flex;align-items:center;justify-content:center;
-  text-align:center;color:var(--muted);font:500 24px var(--mono);padding:24px;background:repeating-linear-gradient(45deg,transparent 0 18px,rgba(255,255,255,.015) 18px 36px);overflow:hidden}
-.shot img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px}
-.shot.small{flex:0 0 auto;height:230px;margin-top:auto}
 /* Editable chips: .ex = architect's example value (not confirmed); .ph = placeholder to fill in */
 .ex,.ph{font-family:var(--mono);font-size:.85em;border:2px dashed var(--acc);border-radius:8px;padding:1px 10px;white-space:nowrap;outline:none;position:relative;display:inline-block;line-height:1.3}
 .ex::after,.ph::after{content:"example";position:absolute;top:-13px;right:6px;font:700 12px var(--sans);letter-spacing:.06em;text-transform:uppercase;background:var(--bg);color:var(--acc);padding:0 4px}
@@ -52,7 +47,6 @@ code,.mono{font-family:var(--mono);font-size:.9em;color:#c9d6e2}
 .fstep .n{display:inline-flex;width:40px;height:40px;border-radius:50%;background:var(--acc);color:#06281a;font:800 22px var(--sans);align-items:center;justify-content:center;margin-bottom:10px}
 .cols{display:flex;gap:48px;flex:1;min-height:0}
 .cols>ul{flex:1 1 50%}.cols li{font-size:28px;margin-bottom:18px}
-.cols .shot{flex:1 1 50%}
 .vs{display:flex;gap:30px;margin-bottom:28px}
 .card{flex:1;border:2px solid var(--line);border-radius:14px;padding:22px 26px;background:var(--panel)}
 .card h3{font:700 30px var(--mono);margin-bottom:10px;color:var(--acc)}
@@ -75,7 +69,6 @@ code,.mono{font-family:var(--mono);font-size:.9em;color:#c9d6e2}
 .trace{display:flex;align-items:center;gap:10px;font:600 20px var(--mono);margin:0 0 18px;flex-wrap:nowrap}
 .trace span.t{white-space:nowrap;border:1px solid var(--line);border-radius:8px;padding:8px 14px;background:var(--panel)}
 .trace .arrow{font-size:24px;padding:0 2px}
-.shots{display:flex;gap:24px;flex:1;min-height:0}
 .foot{position:absolute;left:110px;bottom:40px;font:600 18px var(--mono);color:var(--muted);letter-spacing:.06em}
 .quote{font-size:30px;line-height:1.45;border-left:5px solid var(--line);padding:6px 0 6px 24px;margin:8px 0 0;color:var(--text)}
 .cmd{font:500 19px/1.6 var(--mono);background:#0b1016;border:1px solid var(--line);border-radius:10px;padding:12px 18px;white-space:pre;color:#c9d6e2;margin-bottom:14px}
@@ -131,8 +124,7 @@ docker compose up -d --wait postgres
 docker compose run --rm api npm run migration:run
 docker compose run --rm api npm run seed:admin
 docker compose up -d api</div><ul class="ev tight"><li><code>GET /health</code> → <code>{"status":"ok","db":"up"}</code> <small>runs <code>SELECT 1</code> against Postgres</small></li><li>Logs: <code>docker compose logs -f api</code></li><li>Swagger: <code>http://localhost:3000/api/docs</code></li></ul></div>
-  </div>
-  <div class="shot" data-shot="readme-terminal"><!-- <img src="shots/readme-terminal.png" alt="README / terminal + GET /health"> --><span>Screenshot: README / terminal + GET /health</span></div></div>
+  </div></div>
   <div class="foot">Projecthon — Demo 1 · SkillBreak</div>
 </section>
 <!-- 4 · Environment Configuration -->
@@ -141,8 +133,7 @@ docker compose up -d api</div><ul class="ev tight"><li><code>GET /health</code> 
   <div class="body"><div class="kpi">
     <div><span class="lbl">Target</span><div class="target">100% of DB config variables read from local <code>.env</code>; <code>.env.example</code> lists every one with placeholders; <code>.env</code> git-ignored; zero real secrets committed.</div></div>
     <div><span class="lbl">Evidence</span><ul class="ev tight"><li><code>.env.example</code> (only env file tracked in git): <small><code>DB_HOST</code> <code>DB_PORT</code> <code>DB_USER</code> <code>DB_PASSWORD</code> <code>DB_NAME</code> <code>DB_SSL</code> · <code>REPLACE_...</code> placeholders</small></li><li><code>src/config/config.ts</code>: <code>import 'dotenv/config'</code> <small>API, migration CLI and seed all use the same <code>loadConfig()</code></small></li><li><code>.gitignore</code>: <code>.env</code>, <code>.env.*</code>, <code>!.env.example</code></li><li>No secret values shown</li></ul></div>
-  </div>
-  <div class="shot" data-shot="env-example"><!-- <img src="shots/env-example.png" alt=".env.example + config.ts + .gitignore"> --><span>Screenshot: .env.example + config.ts + .gitignore</span></div></div>
+  </div></div>
   <div class="foot">Projecthon — Demo 1 · SkillBreak</div>
 </section>
 <!-- 5 · ORM &amp; Data Model -->
@@ -151,8 +142,7 @@ docker compose up -d api</div><ul class="ev tight"><li><code>GET /health</code> 
   <div class="body"><div class="kpi">
     <div><span class="lbl">Target</span><div class="target">At least 1 ORM-managed entity mapped to a table; demo reads/writes use the ORM, not in-memory data or a mocked repository.</div></div>
     <div><span class="lbl">Evidence</span><ul class="ev tight"><li>TypeORM <small>data source <code>src/database/data-source.ts</code></small></li><li><code>User</code> → <code>users</code> <small>id (uuid), username, email, displayName, passwordHash, role, status, tokenVersion, timestamps</small></li><li><code>RefreshFamily</code> · <code>RefreshToken</code> <small>1 user → many <code>refresh_families</code> (<code>user_id</code>) → many <code>refresh_tokens</code> (<code>family_id</code>)</small></li></ul></div>
-  </div>
-  <div class="shot" data-shot="entity-code"><!-- <img src="shots/entity-code.png" alt="User entity / data-source.ts"> --><span>Screenshot: User entity / data-source.ts</span></div></div>
+  </div></div>
   <div class="foot">Projecthon — Demo 1 · SkillBreak</div>
 </section>
 <!-- 6 · Schema Initialization -->
@@ -161,8 +151,7 @@ docker compose up -d api</div><ul class="ev tight"><li><code>GET /health</code> 
   <div class="body"><div class="kpi">
     <div><span class="lbl">Target</span><div class="target">Schema created or updated on a clean local DB with the documented ORM migration tooling; repeatable.</div></div>
     <div><span class="lbl">Evidence</span><ul class="ev"><li><code>npm run migration:run</code> <small>runs <code>1740000000000-InitialSchema</code> · <code>synchronize: false</code></small></li><li><code>npm run seed:admin</code> <small>does nothing if the configured admin already exists</small></li><li>Clean reset <small><code>npm run db:reset -- --confirm-local-reset</code><br>removes volumes, reinstalls, reruns migration + seed</small></li></ul></div>
-  </div>
-  <div class="shot" data-shot="db-tables"><!-- <img src="shots/db-tables.png" alt="migration result / tables in DB"> --><span>Screenshot: migration result / tables in DB</span></div></div>
+  </div></div>
   <div class="foot">Projecthon — Demo 1 · SkillBreak</div>
 </section>
 <!-- 7 · API -> DB (emphasis) -->
@@ -180,8 +169,7 @@ docker compose up -d api</div><ul class="ev tight"><li><code>GET /health</code> 
     <li><b>Swagger UI only</b>: send the request, show the response</li>
     <li>No token → <code>401</code>; HS256 signature + expiry checked every request <small><code>JWT_ACCESS_TTL</code> = 900 s</small></li>
     <li><code>/me</code>: player + admin · <code>/admin/users</code>: admin only <small>player → <code>403</code></small></li>
-  </ul></div>
-  <div class="shot" data-shot="swagger-authorize"><!-- <img src="shots/swagger-authorize.png" alt="Swagger Authorize / response"> --><span>Screenshot: Swagger Authorize / response</span></div></div>
+  </ul></div></div>
   <div class="foot">Projecthon — Demo 1 · SkillBreak</div>
 </section>
 
@@ -196,7 +184,6 @@ docker compose up -d api</div><ul class="ev tight"><li><code>GET /health</code> 
     <div class="step hot"><b>3 · Restart</b><code>docker compose restart api</code></div><span class="arrow">→</span>
     <div class="step"><b>4 · Read again</b><code>GET /me</code> · same user</div>
   </div>
-  <div class="shots"><div class="shot" data-shot="before-restart"><!-- <img src="shots/before-restart.png" alt="GET /me before restart"> --><span>Screenshot: GET /me before restart</span></div><div class="shot" data-shot="after-restart"><!-- <img src="shots/after-restart.png" alt="same GET /me after restart"> --><span>Screenshot: same GET /me after restart</span></div></div>
   <div class="foot">Projecthon — Demo 1 · SkillBreak</div>
 </section>
 
