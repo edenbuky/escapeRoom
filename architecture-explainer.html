@@ -24,7 +24,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .modes { display: flex; gap: 6px; background: #eceff5; padding: 4px; border-radius: 999px; }
 .modes button { border: 0; background: transparent; padding: 7px 14px; border-radius: 999px; font-size: 14px; color: var(--muted); }
 .modes button[aria-selected="true"] { background: #fff; color: var(--ink); box-shadow: var(--shadow); }
-.modes .ghost { color: #9a3412; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 4px 24px 10px; font-size: 12.5px; color: var(--muted); }
 .lg-item { display: inline-flex; align-items: center; gap: 6px; }
 .sw { width: 14px; height: 14px; border-radius: 4px; display: inline-block; border: 2px solid; }
@@ -41,7 +40,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .map-wrap { min-width: 0; }
 .map { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 56px; row-gap: 46px;
   grid-template-areas: "react react blob" "gateway . projection" "bus bus bus" "catalog engine sandbox" "redis postgres pool";
-  background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 22px; box-shadow: var(--shadow); }
+  background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 22px 22px 34px; box-shadow: var(--shadow); }
 .wires { position: absolute; inset: 0; pointer-events: none; z-index: 2; overflow: visible; }
 .area-react { grid-area: react; } .area-blob { grid-area: blob; } .area-gateway { grid-area: gateway; }
 .area-projection { grid-area: projection; } .area-bus { grid-area: bus; } .area-catalog { grid-area: catalog; }
@@ -53,6 +52,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .box-head { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; border: 0; background: transparent; padding: 0; text-align: left; width: auto; max-width: 100%; }
 .box-name { font-weight: 650; font-size: 15px; }
 .box-sub { font-size: 11.5px; letter-spacing: .02em; text-transform: uppercase; color: var(--muted); }
+.box-label2 { font-size: 12.5px; font-weight: 600; color: var(--service, #0f766e); margin-top: 2px; }
 .g-client { border-color: var(--client); background: var(--client-bg); }
 .g-service { border-color: var(--service); background: var(--service-bg); border-width: 3px; }
 .g-core { border-color: var(--core); background: var(--core-bg); border-width: 4px; box-shadow: 0 6px 20px rgba(67,56,202,.15); }
@@ -85,8 +85,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .wire.k-rest .line { stroke: var(--client); }
 .wire.k-sse .line { stroke: var(--sse); stroke-dasharray: 2 4; }
 .wire.k-docker .line { stroke: var(--infra); }
+.wire.k-cache .line { stroke: var(--infra); stroke-dasharray: 5 3; }
 .wire.k-assets .line { stroke: var(--client); stroke-dasharray: 1 4; stroke-linecap: round; }
-.head.k-bus { fill: var(--bus); } .head.k-http { fill: var(--http); } .head.k-rest, .head.k-sse { fill: var(--client); } .head.k-docker { fill: var(--infra); } .head.k-assets { fill: var(--client); }
+.head.k-bus { fill: var(--bus); } .head.k-http { fill: var(--http); } .head.k-rest, .head.k-sse { fill: var(--client); } .head.k-docker { fill: var(--infra); } .head.k-assets { fill: var(--client); } .head.k-cache { fill: var(--infra); }
 .wire .badge { fill: #fff; stroke: #94a3b8; stroke-width: 1.5; }
 .wire .badge-t { font-size: 11px; text-anchor: middle; fill: var(--ink); font-weight: 600; }
 .wire:hover .line, .wire:focus .line, .wire.hl .line { stroke-width: 3.5; }
@@ -109,8 +110,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .tag { display: inline-block; font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; padding: 3px 8px; border-radius: 999px; background: #eef1f6; color: var(--muted); }
 .t-client { background: var(--client-bg); color: var(--client); } .t-service { background: var(--service-bg); color: var(--service); }
 .t-core, .t-module { background: var(--core); color: #fff; } .t-infra { background: var(--infra-bg); color: var(--infra); }
-.t-edge.k-bus { background: #f3edff; color: var(--bus); } .t-edge.k-http { background: #e8ebf0; color: var(--http); }
-.t-open { background: #fff1e6; color: #9a3412; } .t-tour { background: var(--core-bg); color: var(--core); }
+.t-edge.k-cache { background: #fff4e0; color: #9a5b00; } .t-edge.k-bus { background: #f3edff; color: var(--bus); } .t-edge.k-http { background: #e8ebf0; color: var(--http); }
+.t-tour { background: var(--core-bg); color: var(--core); }
 .sec { border-top: 1px solid var(--line); padding: 10px 0 4px; }
 .sec h3 { margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
 .sec p { margin: 0 0 6px; line-height: 1.5; font-size: 15px; }
@@ -139,13 +140,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .lit { margin-top: 6px; }
 .lit-label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 2px; }
 .tour-nav { display: flex; justify-content: space-between; margin-top: 16px; gap: 8px; }
-.undecided { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #9a3412; background: #fff1e6; border: 1px dashed #fdba74; border-radius: 6px; padding: 2px 7px; margin-bottom: 4px; }
-.p-title { font-weight: 600; }
-.decided { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #166534; background: #ecfdf3; border: 1px solid #86efac; border-radius: 6px; padding: 2px 7px; margin-bottom: 4px; }
-.decided-item { border-left: 3px solid #22c55e; padding-left: 10px; }
-.q-was { color: var(--muted); font-size: 13px; text-decoration: line-through; }
-.points { margin: 4px 0 0; padding-left: 18px; } .points li { margin: 3px 0; }
-.q-h2 { font-size: 17px; margin: 18px 0 2px; }
+.sec code { font: 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; background: #f1f3f6; border-radius: 4px; padding: 0 4px; }
 
 /* ---------- phone ---------- */
 @media (max-width: 760px) {
@@ -183,7 +178,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
   <nav class="modes" role="tablist" aria-label="Mode">
     <button id="mode-explore" role="tab" aria-selected="true"></button>
     <button id="mode-tour" role="tab" aria-selected="false"></button>
-    <button id="open-q" class="ghost"></button>
   </nav>
 </header>
 <div id="legend" class="legend" aria-label="Legend"></div>
@@ -227,10 +221,10 @@ window.CONTENT = {
       why: "presentation only. No game rules in the browser, so a player can't cheat by editing the page. Never touches DB, Redis or the bus." },
     blob: { name: "Blob Storage + CDN", sub: "", group: "client",
       what: "static skin images.", does: "serves images to the browser only.", why: "keeps static files off the services." },
-    gateway: { name: "gateway-api", sub: "Microservice 1", group: "service", db: null,
+    gateway: { name: "gateway-api", sub: "Microservice 1", group: "service", db: "gateway_db",
       what: "the public front door.",
-      does: "Microsoft Entra sign-in check, role check (player/admin), owner check, validates the command, puts it on Service Bus, replies 202 \"received\" right away.",
-      why: "one place for auth and intake; the player gets an instant reply even if the engine is busy. No database.",
+      does: "Issues the JWT at `POST /auth/login` (checked against `gateway_db.users`) and validates it on every request, then checks the role and that the player owns the session. Validates the command, puts it on Service Bus and replies 202 (\"received\") at once.",
+      why: "one place for auth and intake; the player gets an instant reply even if the engine is busy.",
       without: "every service would have to do auth itself and would be public." },
     engine: { name: "game-engine", sub: "Microservice 2 · THE CORE", group: "core", db: "engine_db",
       what: "the brain. Owns the game rules. DB: engine_db.",
@@ -242,12 +236,16 @@ window.CONTENT = {
       does: "creates a container per player puzzle (terminal/git, SQL), runs commands in it (5 s limit, 64 KB output), deletes old ones (reaper).",
       why: "running player code is dangerous. Isolating Docker access in one service on separate machines limits the damage of an escape.",
       without: "the engine would hold Docker rights, and a sandbox breakout could reach the game rules and databases.",
-      terminal: "The sandbox sets GIT_PAGER=cat and PAGER=cat so git output prints straight through." },
+      terminal: ["Terminal is line-by-line: the player types a full command, presses Enter, and gets text back.",
+        "No interactive terminal, no WebSocket. The xterm.js view keeps a prompt and up-arrow history.",
+        "The sandbox sets GIT_PAGER=cat and PAGER=cat so git output prints straight through."] },
     catalog: { name: "script-catalog", sub: "Microservice 4", group: "service", db: "catalog_db",
       what: "the library of escape-room scripts and puzzle templates, by version. DB: catalog_db.",
       does: "stores, validates and publishes script versions. Published versions never change.",
-      why: "authoring and publishing are admin work, rare, and must not affect running games. A running session keeps its version." },
-    projection: { name: "projection", sub: "Microservice 5", group: "service", db: "projection_db",
+      why: "authoring and publishing are admin work, rare, and must not affect running games. A running session keeps its version.",
+      demo: ["The escape room from story-script.txt is the demo script: room-1 (SQL, hash cracker, Dana's login), then room-2 (git terminal, RSA, TLS, door), then escaped.",
+        "It is data only; the engine runs it like any script."] },
+    projection: { name: "projection", sub: "Microservice 5", label2: "also serves the admin overview", group: "service", db: "projection_db",
       what: "the live-screen feed. DB: projection_db.",
       does: "listens to game events, keeps a ready-to-show copy of each session, pushes updates to the browser over SSE.",
       why: "reading the screen state never loads the engine; many viewers, one writer. On reconnect it sends a full snapshot." },
@@ -261,13 +259,14 @@ window.CONTENT = {
       why: "speed. Not the truth: if Redis is down everything reads Postgres. Writes never read the cache.",
       usedBy: ["gateway-api: session-owner cache.", "game-engine: template cache, hot session cache, locks (relay, janitor).",
         "sandbox-manager: provision lock, relay lock.", "script-catalog: deletes the \"current version\" pointer on publish, relay lock.",
-        "projection: does NOT use Redis (it fans out with Postgres LISTEN/NOTIFY)."] },
+        "projection: uses Redis for one key only, `admin:overview`, the admin dashboard numbers. It rewrites that key when a game starts or ends. If the key is missing, it computes the numbers from its own database. Live updates to players still go through Postgres, not Redis."] },
     postgres: { name: "Postgres", sub: "one database per service", group: "infra",
-      what: "one database per service: engine_db, sandbox_db, catalog_db, projection_db. A service reads and writes only its own.",
+      what: "one database per service: gateway_db, engine_db, sandbox_db, catalog_db, projection_db. A service reads and writes only its own.",
       does: "source of truth. Every session change checks a version number, so two writers can't overwrite each other.",
       why: "each service can change its tables and deploy alone, and no service can bypass another's rules by writing its tables.",
-      cost: "no joins across services; data moves by events. gateway-api has no DB.",
-      usedBy: ["each service to its own DB only (engine_db, sandbox_db, catalog_db, projection_db)."] },
+      cost: "no joins across services; data moves by events.",
+      usedBy: ["each service to its own DB only (gateway_db, engine_db, sandbox_db, catalog_db, projection_db).",
+        "gateway_db (gateway-api): `users` is the only table. `passwordHash` is a bcrypt hash; plain-text passwords are never stored or logged."] },
     pool: { name: "Isolated node pool", sub: "infrastructure", group: "infra",
       what: "separate machines for containers. gVisor runtime, no network, read-only disk, non-root, CPU/memory/process limits, 2 h max life.",
       does: "hosts the player containers and nothing else.",
@@ -277,7 +276,9 @@ window.CONTENT = {
   /* Modules inside game-engine: one process, not services. */
   modules: {
     "m-state": { name: "state machine",
-      does: "runs the Script as a state machine (rooms = states, puzzles locked -> open -> solved; session Active -> Escaped | Expired | Abandoned).",
+      does: ["runs the Script as a state machine (rooms = states, puzzles locked -> open -> solved; session Active -> Escaped | Expired | Abandoned).",
+        "No \"Failed\" status; endings stay Escaped / Expired / Abandoned.",
+        "A ruined puzzle never ends the game. It always resets (the puzzle, or the whole room) to a fresh copy and the player keeps going; the clock keeps running."],
       why: "game rules are data (rooms, puzzles, transitions), so a new script needs no code. Pure function, easy to test." },
     "m-factory": { name: "component factory", does: "Builds each puzzle from its template (component factory).",
       why: "a new puzzle kind plugs in without touching the engine; changing a script changes data only." },
@@ -303,24 +304,39 @@ window.CONTENT = {
     { id: "e8", from: "engine", to: "sandbox", kind: "http", label: "run this command now", text: "game-engine -> sandbox-manager, direct HTTP: run this command now (needs the output, so it is synchronous).",
       why: "needs the output, so it is synchronous." },
     { id: "e9", why: "only on cache miss; published versions never change, so they are cached for 24 h.", from: "engine", to: "catalog", kind: "http", label: "fetch a script/template", text: "game-engine -> script-catalog, direct HTTP: fetch a script/template, only on cache miss." },
-    { id: "e10", why: "only on cache miss; the gateway has no DB of its own.", from: "gateway", to: "engine", kind: "http", label: "who owns this session", text: "gateway-api -> game-engine, direct HTTP: who owns this session, only on cache miss." },
+    { id: "e10", why: "Cache miss only. gateway_db holds users only; session owners live in engine_db.", from: "gateway", to: "engine", kind: "http", label: "who owns this session", text: "gateway-api -> game-engine, direct HTTP: who owns this session, only on cache miss." },
     { id: "e11", why: "only sandbox-manager holds Docker rights.", from: "sandbox", to: "pool", kind: "docker", label: "Docker", text: "sandbox-manager -> Docker on the isolated pool." },
     { id: "e12", from: "react", to: "blob", kind: "assets", label: "skin images", does: "skin images, read only by the browser.",
       text: "Browser -> Blob Storage + CDN, \"skin images, read only by the browser\".",
       why: "only the browser needs them; serving them from Blob + CDN keeps static files off the services." },
     { id: "e13", from: "gateway", to: "catalog", kind: "http", label: "admin publish",
       text: "gateway-api -> script-catalog, direct HTTP, admin routes only.",
-      does: "admin POST publish -> gateway-api (Entra sign-in, admin role) -> direct HTTP -> script-catalog validates.",
-      why: "publishing is a rare admin action that needs an immediate valid/invalid answer, so it is synchronous, not via the bus." }
+      does: "admin POST publish -> gateway-api (JWT + admin role) -> direct HTTP -> script-catalog validates.",
+      why: "publishing is a rare admin action that needs an immediate valid/invalid answer, so it is synchronous, not via the bus." },
+    { id: "e14", from: "projection", to: "redis", kind: "cache", label: "admin overview",
+      text: "projection -> Redis: \"admin overview\". Redis key `admin:overview`.",
+      does: ["Shows: games in progress right now (live count), games finished today (escaped / expired / abandoned), average solve time per puzzle, wrong attempts per puzzle, ruins and resets per puzzle.",
+        "Owner: projection. projection serves `GET /admin/overview` directly. It is already public for SSE, and it checks the JWT (with the same `JWT_SECRET`) and the admin role. No new HTTP call between services, still four. Redis key `admin:overview`.",
+        "Refresh: projection recalculates from its own database and overwrites the key when a game starts (SessionStarted) and when a game ends (SessionEscaped / SessionExpired / SessionAbandoned). Not on every move.",
+        "Ruins come from PuzzleReset events; wrong attempts from CommandEvaluated with verdict rejected and reason wrongAnswer (policy blocks, sandbox restarting and time-up do not count).",
+        "Fallback: key missing or Redis down -> compute from projection_db, store, return. Postgres stays the truth."],
+      why: "the admin page is read often but the numbers change only when a game starts or ends, so projection computes them once at those moments and keeps the result in Redis; admin login then reads one key instead of re-counting every game in projection_db (Postgres stays the source of truth and the fallback)." }
   ],
-  kindNames: { rest: "Browser request (REST)", sse: "Live push (SSE)", bus: "Through Azure Service Bus", http: "Direct HTTP call", docker: "Docker", assets: "skin images" },
+  kindNames: { rest: "Browser request (REST)", sse: "Live push (SSE)", bus: "Through Azure Service Bus", http: "Direct HTTP call", docker: "Docker", assets: "skin images", cache: "Redis key" },
   httpNote: "These four HTTP calls are the only direct service-to-service calls.",
   queueNote: { queue: "queues carry commands", topic: "topics carry events" },
 
   flows: [
-    { id: "F0", title: "The big picture", steps: [
+    { id: "intro", title: "The big picture", steps: [
       { text: "5 microservices, each its own NestJS app with its own database. No monolith. The only \"together\" part is inside game-engine: state machine, component factory, crypto checks, inbox/outbox, janitor are MODULES in one process, not services.",
         hl: ["gateway", "engine", "sandbox", "catalog", "projection"], edges: [] } ] },
+    /* Source: DESIGN-v2.md section 11 F0 Login and JWT (first flow in the design). */
+    { id: "F0", optional: true, first: true, title: "Login and JWT", steps: [
+      { text: "React app -> gateway-api: POST /auth/login (username, password).", hl: ["react", "gateway"], edges: ["e1"] },
+      { text: "gateway-api finds the user by username in gateway_db, then does a bcrypt compare with passwordHash.", hl: ["gateway", "postgres"], edges: [] },
+      { text: "gateway-api returns a signed JWT (sub, role, exp). The JWT is signed with JWT_SECRET (HS256) and carries sub (userId), role (player or admin) and exp (JWT_EXPIRES_IN).", hl: ["gateway", "react"], edges: ["e1"] },
+      { text: "The browser sends each request with Authorization: Bearer JWT. The guard checks signature and expiry, then role, then owner; the answer is the response, or 401 / 403.", hl: ["react", "gateway", "projection"], edges: ["e1", "e2"] },
+      { text: "The same check runs on every gateway-api route, on the projection SSE stream and on GET /admin/overview. projection verifies with the same JWT_SECRET and does not call gateway-api. Checking a JWT is local, so it adds no call.", hl: ["gateway", "projection"], edges: ["e2"] } ] },
     { id: "F1", title: "Player starts a game", steps: [
       { text: "Browser POST /sessions -> gateway: sign-in check, new sessionId, StartSession on the bus, 202.", hl: ["react", "gateway", "bus"], edges: ["e1", "e3"] },
       { text: "Browser opens the SSE stream from projection.", hl: ["react", "projection"], edges: ["e2"] },
@@ -336,7 +352,7 @@ window.CONTENT = {
       { text: "Goal met -> solved, maybe opens next puzzles or the next room; else progress. Commit.", hl: ["engine", "m-state"], edges: [] },
       { text: "event -> projection -> screen shows output and statuses.", hl: ["projection", "react"], edges: ["e6", "e2"] },
       { label: "Ruin variant", text: "if the command breaks the puzzle (DROP TABLE, extra git commit), the puzzle is reset: old container destroyed, a fresh one created; screen shows \"puzzle reset, sandbox restarting\".",
-        note: "D1 decided: a ruined puzzle never ends the game; the clock keeps running. Every ruin is recorded as a PuzzleReset event plus the command that caused it.", hl: ["engine", "bus", "sandbox", "pool", "react"], edges: ["e4", "e5"] } ] },
+        note: "A ruined puzzle never ends the game. It always resets (the puzzle, or the whole room) to a fresh copy and the player keeps going; the clock keeps running. Who broke what is still visible: every ruin is recorded as a PuzzleReset event plus the command that caused it.", hl: ["engine", "bus", "sandbox", "pool", "react"], edges: ["e4", "e5"] } ] },
     { id: "F3", title: "Player solves a crypto puzzle (hash / RSA / TLS)", steps: [
       { text: "same intake as F2.", hl: ["react", "gateway", "bus"], edges: ["e1", "e3"] },
       { text: "engine checks the answer itself on a worker thread (no sandbox). Hash: sha256 compared, never reversed.", hl: ["engine", "m-crypto"], edges: [] },
@@ -351,59 +367,32 @@ window.CONTENT = {
       { text: "Even before the janitor runs, every command checks the deadline, so a late answer never counts.", hl: ["engine"], edges: [] },
       { text: "If a solve and the expiry race, the version number lets only one win; the other re-reads and sees the result.", hl: ["engine", "postgres"], edges: [] } ] },
     { id: "F6", optional: true, title: "Admin publishes a new script version", steps: [
-      { text: "admin POST publish -> gateway-api (Entra sign-in, admin role) -> direct HTTP -> script-catalog validates (every room reachable, a winning path exists, templates exist).", hl: ["gateway", "catalog"], edges: ["e13"] },
+      { text: "admin POST publish -> gateway-api (JWT + admin role) -> direct HTTP -> script-catalog validates (every room reachable, a winning path exists, templates exist).", hl: ["gateway", "catalog"], edges: ["e13"] },
       { text: "commit: status published + pointer + outbox row; delete the cached pointer in Redis.", hl: ["catalog", "postgres", "redis"], edges: [] },
       { text: "ScriptVersionPublished -> bus (catalog-events) -> engine deletes the pointer again (second chance).", hl: ["catalog", "bus", "engine", "redis"], edges: ["e7"] },
-      { text: "new sessions use the new version; running sessions keep the version they started with.", hl: ["engine"], edges: [] } ] }
-  ],
-
-  decisions: [
-    { id: "D1", text: "is there a separate \"Failed\" status?", decided: "Daniel, 2026-10-27: option 3",
-      decision: ["A ruined puzzle never ends the game. It always resets (the puzzle, or the whole room) to a fresh copy and the player keeps going; the clock keeps running.",
-        "No \"Failed\" status; endings stay Escaped / Expired / Abandoned.",
-        "Who broke what is still visible: every ruin is recorded as a PuzzleReset event plus the command that caused it."] },
-    { id: "D2", text: "line-by-line terminal (current) vs interactive terminal.", decided: "2026-10-27, Daniel",
-      decision: ["Terminal is line-by-line: the player types a full command, presses Enter, and gets text back.",
-        "No interactive terminal, no WebSocket. The xterm.js view keeps a prompt and up-arrow history.",
-        "The sandbox sets GIT_PAGER=cat and PAGER=cat so git output prints straight through."] },
-    { id: "D3", text: "keep the demo puzzles?", decided: "2026-10-27, Daniel",
-      decision: ["Keep. The escape room from story-script.txt is the demo script: room-1 (SQL, hash cracker, Dana's login), then room-2 (git terminal, RSA, TLS, door), then escaped.",
-        "It is data only; the engine runs it like any script."] }
-  ],
-  proposals: [
-    { id: "P1", title: "Fold script-catalog into game-engine as a module.", applies: "script-catalog box, catalog-events arrow, engine->catalog HTTP arrow.",
-      gains: "one fewer service, DB, topic and invalidation path.", costs: "admin publishing shares a process with live games.", hl: ["catalog"], edges: ["e7", "e9"] },
-    { id: "P2", title: "Drop the Redis session cache; keep only the template cache and locks.", applies: "Redis box.",
-      gains: "removes the hardest stale-cache case.", costs: "every read hits Postgres (fine at demo load).", hl: ["redis"], edges: [],
-      decided: "Daniel, 2026-10-27: rejected", decision: "Keep the session cache (template cache + session cache + locks)." },
-    { id: "P3", title: "Fold projection into game-engine for the demo.", applies: "projection box, game-events -> projection arrow.",
-      gains: "one fewer service and DB.", costs: "lose an independently scalable read side; SSE load lands on the core.", hl: ["projection"], edges: ["e6"] },
-    { id: "P4", title: "Keep gateway-api, sandbox-manager and Service Bus as they are.", why: "auth in one place, Docker isolated from the core, per-player ordering.",
-      hl: ["gateway", "sandbox", "bus"], edges: [] }
-  ],
-  /* Proposed by the architect; prose only (no box or arrow defined), so it is not drawn on the map. */
-  newProposals: [
-    { id: "admin-overview", title: "Admin overview from cache", status: "proposed by architect, awaiting Daniel's confirm of contents",
-      points: ["Owner: projection (it already holds the read model). Endpoint GET /admin/overview via gateway-api (admin role).",
-        "Redis key admin:overview {active sessions count, finished today, avg solve time per puzzle, wrong attempts per puzzle}.",
-        "Pre-warmed: projection recomputes it from projection_db and writes it to Redis whenever a session ends (SessionEscaped / SessionExpired / SessionAbandoned). So when an admin logs in it is already there.",
-        "Fallback: key missing or Redis down -> compute from projection_db, store, return. Postgres stays the truth."] }
+      { text: "new sessions use the new version; running sessions keep the version they started with.", hl: ["engine"], edges: [] } ] },
+    /* Source: DESIGN-v2.md section 11 F8 + section 12 Admin Overview; FACTSHEET.md ADMIN OVERVIEW DECIDED. */
+    { id: "F8", optional: true, title: "Admin overview", steps: [
+      { text: "Admin logs in at POST /auth/login and gets a signed JWT; the admin page (React app) calls GET /admin/overview on projection, served by projection directly, not via gateway-api.", hl: ["react", "projection"], edges: [] },
+      { text: "projection checks the JWT (with the same JWT_SECRET) and the admin role. No new service-to-service call; there are still four.", hl: ["projection"], edges: [] },
+      { text: "projection reads admin:overview from Redis and returns the overview.", hl: ["projection", "redis"], edges: ["e14"] },
+      { text: "On a miss or when Redis is down, projection computes the overview from projection_db, stores it in admin:overview and returns it. Postgres stays the source of truth.", hl: ["projection", "postgres", "redis"], edges: ["e14"] },
+      { text: "When a game starts or ends (SessionStarted, SessionEscaped, SessionExpired, SessionAbandoned, from Service Bus), projection recomputes the overview from projection_db and overwrites the key. Not on every move.", hl: ["bus", "projection", "redis"], edges: ["e14"] },
+      { text: "What the key holds: games in progress (live count of Active sessions); games finished today by ending (escaped, expired, abandoned); average solve time per puzzle; wrong attempts per puzzle (CommandEvaluated with verdict rejected and reason wrongAnswer; policy blocks, sandbox restarting and time-up do not count); ruins and resets per puzzle (PuzzleReset events).", hl: ["projection", "redis"], edges: ["e14"] } ] }
   ],
 
   /* Interface wording (buttons, headings) — not architecture facts. */
   ui: {
-    explore: "Explore", tour: "Guided tour", openQ: "Open questions",
+    explore: "Explore", tour: "Guided tour",
     what: "What it is", does: "What it does", why: "Why it exists", without: "What breaks without it",
     missing: "The factsheet doesn't say this yet — listed as a question for the architect.",
     relatedFrom: "Related, from the factsheet's", hint: "Tap any box, module or numbered arrow to see what it is, what it does, and why it exists.",
     reveal: "Reveal what happens", next: "Next", back: "Back", close: "Close", backToTour: "Back to tour",
     lit: "Lit up on the map:", connections: "Connections", modules: "Modules inside (one process, not services)",
-    database: "Own database", decisionsTitle: "Not settled yet", decisionsNote: "Open decisions — do not read these as decided.", decidedTitle: "Decided", noOpenDecisions: "No open decisions left (D1–D3 are decided, see below).", decidedTag: "Decided", questionLabel: "Question was",
-    proposalsTitle: "Proposals", proposalsNote: "NOT decided; for discussion with Daniel.", proposalsNoteDecided: "NOT decided unless marked Decided; for discussion with Daniel.", proposalWas: "Proposal was", proposedTag: "Proposed · not decided", gains: "Gains", costs: "Costs", appliesTo: "Applies to",
-    showOnMap: "Highlight on map", legendShape1: "Thick box = separate microservice (own process, own database)",
+    database: "Own database", legendShape1: "Thick box = separate microservice (own process, own database)",
     legendShape2: "Dashed chip = module inside one process", legendShape3: "Dashed box = infrastructure, not a service",
     connectsTo: "Connected by", stepOf: "Step", of: "of",
-    openTag: "Open", optional: "Optional", usedBy: "Who uses it", cost: "Cost", terminalLabel: "Terminal (D2 decided)", optionalNote: "Optional last section — the main five flows are done.", notDecidedTag: "Not decided", whyLabel: "why"
+    optional: "Optional", usedBy: "Who uses it", cost: "Cost", terminalLabel: "Terminal", demoLabel: "Demo script", optionalNote: "Optional section — the main five flows are done."
   }
 };
 
@@ -438,6 +427,7 @@ window.CONTENT = {
     var head = chip("box-head", "", id, "node");
     head.appendChild(el("span", "box-name", n.name));
     if (n.sub) head.appendChild(el("span", "box-sub", n.sub));
+    if (n.label2) head.appendChild(el("span", "box-label2", n.label2));
     box.appendChild(head);
     if (id === "engine") {
       var mods = el("div", "modules");
@@ -462,7 +452,7 @@ window.CONTENT = {
     if (n.db) box.appendChild(chip("db", n.db, "postgres", "node"));
     if (id === "postgres") {
       var dbs = el("div", "db-row");
-      ["engine_db", "sandbox_db", "catalog_db", "projection_db"].forEach(function (d) { dbs.appendChild(el("span", "db small", d)); });
+      ["gateway_db", "engine_db", "sandbox_db", "catalog_db", "projection_db"].forEach(function (d) { dbs.appendChild(el("span", "db small", d)); });
       box.appendChild(dbs);
     }
     box.addEventListener("click", function (ev) {
@@ -495,6 +485,7 @@ window.CONTENT = {
     var gapY = (R.react.b + R.gateway.t) / 2;
     var gx = fx(R.gateway, 0.35), gx3 = fx(R.gateway, 0.8);
     var E = R.engine, S = R.sandbox, K = R.catalog, P = R.projection;
+    var lowY = Math.max(R.redis.b, R.postgres.b, R.pool.b) + 13;
     var midY = Math.min(E.cy, S.t + S.h * 0.55, K.t + K.h * 0.55);
     var px = {
       e1: [[gx, R.react.b], [gx, R.gateway.t]],
@@ -510,10 +501,12 @@ window.CONTENT = {
       e11: [[S.cx, S.b], [S.cx, R.pool.t]],
       e12: [[R.react.r, R.react.t + R.react.h * 0.4], [R.blob.l, R.react.t + R.react.h * 0.4]],
       e13: [[R.gateway.l, R.gateway.t + R.gateway.h * 0.7], [R.gateway.l - 11, R.gateway.t + R.gateway.h * 0.7],
-            [K.l - 11, K.t + K.h * 0.3], [K.l, K.t + K.h * 0.3]]
+            [K.l - 11, K.t + K.h * 0.3], [K.l, K.t + K.h * 0.3]],
+      e14: [[P.r, P.t + P.h * 0.7], [P.r + 12, P.t + P.h * 0.7], [P.r + 12, lowY],
+            [R.redis.cx, lowY], [R.redis.cx, R.redis.b]]
     };
     var badge = {
-      e1: 0, e2: 1, e3: 1, e6: 1, e7: 1, e4: 1, e5: 1, e10: 0, e8: 0, e9: 0, e11: 0, e12: 0, e13: 1
+      e1: 0, e2: 1, e3: 1, e6: 1, e7: 1, e4: 1, e5: 1, e10: 0, e8: 0, e9: 0, e11: 0, e12: 0, e13: 1, e14: 2
     };
     return { pts: px, seg: badge };
   }
@@ -525,7 +518,7 @@ window.CONTENT = {
     svg.setAttribute("height", mr.height);
     svg.setAttribute("viewBox", "0 0 " + mr.width + " " + mr.height);
     var defs = document.createElementNS(NS, "defs");
-    ["rest", "sse", "bus", "http", "docker", "assets"].forEach(function (k) {
+    ["rest", "sse", "bus", "http", "docker", "assets", "cache"].forEach(function (k) {
       var mk = document.createElementNS(NS, "marker");
       mk.setAttribute("id", "arrow-" + k);
       mk.setAttribute("viewBox", "0 0 10 10");
@@ -581,7 +574,7 @@ window.CONTENT = {
 
 </script>
 <script>
-/* Renders panel contents (details, tour card, open questions). Exposes window.Panel. */
+/* Renders panel contents (details, tour card). Exposes window.Panel. */
 (function () {
   var C = window.CONTENT, U = C.ui;
 
@@ -589,6 +582,12 @@ window.CONTENT = {
     var e = document.createElement(tag);
     if (cls) e.className = cls;
     if (text != null) e.textContent = text;
+    return e;
+  }
+  /* `code` spans in content text render as <code>. */
+  function rich(tag, cls, text) {
+    var e = el(tag, cls);
+    String(text).split("`").forEach(function (part, i) { e.appendChild(i % 2 ? el("code", null, part) : document.createTextNode(part)); });
     return e;
   }
   function link(label, kind, target, cls) {
@@ -606,7 +605,7 @@ window.CONTENT = {
     s.appendChild(el("h3", null, title));
     var vals = Array.isArray(value) ? value : [value];
     if (value == null) s.appendChild(el("p", "missing", U.missing));
-    else vals.forEach(function (v) { s.appendChild(el("p", null, v)); });
+    else vals.forEach(function (v) { s.appendChild(rich("p", null, v)); });
     if (related) {
       var r = el("p", "related");
       r.appendChild(el("span", "rel-from", U.relatedFrom + " " + related.from + ": "));
@@ -624,17 +623,6 @@ window.CONTENT = {
     return h;
   }
 
-  function proposalLinks(nodeIds, edgeIds) {
-    var ps = C.proposals.filter(function (p) {
-      return !p.decided && p.hl.some(function (h) { return nodeIds.indexOf(h) >= 0; }) || p.edges.some(function (x) { return edgeIds.indexOf(x) >= 0; });
-    });
-    if (!ps.length) return null;
-    var s = el("section", "sec props-ref");
-    s.appendChild(el("h3", null, U.proposalsTitle + " — " + U.proposalsNote));
-    ps.forEach(function (p) { s.appendChild(link(p.id + " " + p.title, "questions", p.id, "chip-link")); });
-    return s;
-  }
-
   function node(id) {
     var n = C.nodes[id], f = el("div", "detail");
     f.appendChild(header(C.groups[n.group].label, "t-" + n.group, n.name, n.sub));
@@ -645,6 +633,7 @@ window.CONTENT = {
     if (n.cost) f.appendChild(section(U.cost, n.cost, null));
     if (n.usedBy) f.appendChild(section(U.usedBy, n.usedBy, null));
     if (n.terminal) f.appendChild(section(U.terminalLabel, n.terminal, null));
+    if (n.demo) f.appendChild(section(U.demoLabel, n.demo, null));
     if (id === "engine") {
       var m = el("section", "sec");
       m.appendChild(el("h3", null, U.modules));
@@ -658,8 +647,6 @@ window.CONTENT = {
       es.forEach(function (e) { c.appendChild(link(edgeTitle(e), "edge", e.id, "chip-link edge-link k-" + e.kind)); });
       f.appendChild(c);
     }
-    var pl = proposalLinks([id], []);
-    if (pl) f.appendChild(pl);
     return f;
   }
 
@@ -690,8 +677,6 @@ window.CONTENT = {
     ends.appendChild(link(nameOf(e.to), "node", e.to, "chip-link"));
     if (e.kind === "bus") ends.appendChild(link(C.nodes.bus.name, "node", "bus", "chip-link"));
     f.appendChild(ends);
-    var pl = proposalLinks([], [id]);
-    if (pl) f.appendChild(pl);
     return f;
   }
 
@@ -705,11 +690,11 @@ window.CONTENT = {
   function tour(stepObj, flow, idx, total, flowIdx, flowLen, revealed) {
     var f = el("div", "detail tour-card");
     var top = el("div", "tour-top");
-    top.appendChild(el("span", "tag t-tour", (flow.id === "F0" ? U.tour : flow.id) + (flow.optional ? " · " + U.optional : "")));
+    top.appendChild(el("span", "tag t-tour", (flow.id === "intro" ? U.tour : flow.id) + (flow.optional ? " · " + U.optional : "")));
     top.appendChild(el("span", "counter", U.stepOf + " " + (idx + 1) + " " + U.of + " " + total));
     f.appendChild(top);
     f.appendChild(el("h2", null, flow.title));
-    if (flow.optional && flowIdx === 0) f.appendChild(el("p", "opt-note", U.optionalNote));
+    if (flow.optional && !flow.first && flowIdx === 0) f.appendChild(el("p", "opt-note", U.optionalNote));
     f.appendChild(el("p", "p-sub", (stepObj.label ? stepObj.label : (flowLen > 1 ? (flowIdx + 1) + " / " + flowLen : ""))));
     var lit = el("div", "lit");
     lit.appendChild(el("span", "lit-label", U.lit));
@@ -732,60 +717,7 @@ window.CONTENT = {
     return f;
   }
 
-  function questions() {
-    var f = el("div", "detail questions");
-    f.appendChild(header(U.openQ, "t-open", U.decisionsTitle, U.decisionsNote));
-    var open = C.decisions.filter(function (d) { return !d.decided; });
-    if (!open.length) f.appendChild(el("p", "p-sub", U.noOpenDecisions));
-    open.forEach(function (d) {
-      var s = el("section", "sec q-item");
-      s.appendChild(el("span", "undecided", U.openTag + " · " + d.id));
-      s.appendChild(el("p", null, d.text));
-      f.appendChild(s);
-    });
-    var done = C.decisions.filter(function (d) { return d.decided; });
-    if (done.length) f.appendChild(el("h2", "q-h2", U.decidedTitle));
-    done.forEach(function (d) {
-      var s = el("section", "sec q-item decided-item");
-      s.id = "dec-" + d.id;
-      s.appendChild(el("span", "decided", U.decidedTag + " · " + d.id));
-      s.appendChild(el("p", "p-sub", d.decided));
-      [].concat(d.decision).forEach(function (t, i) { s.appendChild(el("p", i ? null : "p-title", t)); });
-      s.appendChild(el("p", "q-was", U.questionLabel + ": " + d.text));
-      f.appendChild(s);
-    });
-    f.appendChild(el("h2", "q-h2", U.proposalsTitle));
-    f.appendChild(el("p", "p-sub", U.proposalsNoteDecided));
-    C.proposals.forEach(function (p) {
-      var s = el("section", "sec q-item proposal" + (p.decided ? " decided-item" : ""));
-      s.id = "prop-" + p.id;
-      s.appendChild(el("span", p.decided ? "decided" : "undecided", (p.decided ? U.decidedTag : U.notDecidedTag) + " · " + p.id));
-      if (p.decided) { s.appendChild(el("p", "p-sub", p.decided)); s.appendChild(el("p", "p-title", p.decision)); }
-      var old = p.decided ? "q-was" : null;
-      s.appendChild(el("p", p.decided ? "q-was" : "p-title", (p.decided ? U.proposalWas + ": " : "") + p.title));
-      if (p.applies) s.appendChild(el("p", old, U.appliesTo + ": " + p.applies));
-      if (p.gains) s.appendChild(el("p", old, U.gains + ": " + p.gains));
-      if (p.costs) s.appendChild(el("p", old, U.costs + ": " + p.costs));
-      if (p.why) s.appendChild(el("p", old, U.whyLabel + ": " + p.why));
-      var b = el("button", "chip-link hl-btn", U.showOnMap); b.type = "button"; b.dataset.prop = p.id;
-      s.appendChild(b);
-      f.appendChild(s);
-    });
-    (C.newProposals || []).forEach(function (p) {
-      var s = el("section", "sec q-item proposal new-proposal");
-      s.id = "prop-" + p.id;
-      s.appendChild(el("span", "undecided", U.proposedTag));
-      s.appendChild(el("p", "p-title", p.title));
-      s.appendChild(el("p", "p-sub", p.status));
-      var ul = el("ul", "points");
-      p.points.forEach(function (t) { ul.appendChild(el("li", null, t)); });
-      s.appendChild(ul);
-      f.appendChild(s);
-    });
-    return f;
-  }
-
-  window.Panel = { node: node, module: module, edge: edgeDetail, hint: hint, tour: tour, questions: questions, edgeTitle: edgeTitle, nameOf: nameOf };
+  window.Panel = { node: node, module: module, edge: edgeDetail, hint: hint, tour: tour, edgeTitle: edgeTitle, nameOf: nameOf };
 })();
 
 </script>
@@ -803,7 +735,7 @@ window.CONTENT = {
 
   function text(id, t) { document.getElementById(id).textContent = t; }
   text("title", C.title); text("headline", C.headline);
-  text("mode-explore", U.explore); text("mode-tour", U.tour); text("open-q", U.openQ); text("phone-hint", U.hint);
+  text("mode-explore", U.explore); text("mode-tour", U.tour); text("phone-hint", U.hint);
 
   /* Legend: colour groups + shape key */
   var lg = document.getElementById("legend");
@@ -846,10 +778,6 @@ window.CONTENT = {
     } else if (v === "tour") {
       var s = steps[state.tourIdx];
       frag = P.tour(s.step, s.flow, state.tourIdx, steps.length, s.i, s.n, state.revealed);
-    } else if (v === "questions") {
-      var qb = document.createElement("div"); qb.className = "p-bar";
-      qb.appendChild(btn("✕", "close-panel", closeDetail, U.close)); body.appendChild(qb);
-      frag = P.questions();
     } else frag = P.hint();
     body.appendChild(frag);
     panel.classList.toggle("open", v !== "hint");
@@ -875,8 +803,6 @@ window.CONTENT = {
       var st = steps[state.tourIdx].step; M.highlight(map, st.hl, st.edges);
       var first = isPhone() && map.querySelector(".box.hl");
       if (first) window.scrollTo({ top: first.getBoundingClientRect().top + window.scrollY - 8, behavior: "instant" });
-    } else if (state.view === "questions" && state.prop) {
-      var p = C.proposals.filter(function (x) { return x.id === state.prop; })[0]; M.highlight(map, p.hl, p.edges);
     } else M.highlight(map, [], []);
   }
 
@@ -884,7 +810,7 @@ window.CONTENT = {
     state.sel = { kind: kind, id: id }; state.view = "detail"; render();
   }
   function closeDetail() {
-    state.view = state.mode === "tour" ? "tour" : "hint"; state.prop = null; render();
+    state.view = state.mode === "tour" ? "tour" : "hint"; render();
   }
   function setMode(m) {
     state.mode = m; state.view = m === "tour" ? "tour" : "hint"; state.revealed = false;
@@ -904,15 +830,11 @@ window.CONTENT = {
     if (t.id === "reveal-btn") { state.revealed = true; render(); return; }
     if (t.id === "tour-next") return go(1);
     if (t.id === "tour-back") return go(-1);
-    if (t.dataset.prop) { state.prop = t.dataset.prop; applyHighlight(); return; }
-    if (t.dataset.go === "questions") { state.view = "questions"; state.prop = t.dataset.target; render();
-      var el = document.getElementById("prop-" + t.dataset.target); if (el) el.scrollIntoView({ block: "nearest" }); return; }
     if (t.dataset.go) select(t.dataset.go, t.dataset.target);
   });
 
   document.getElementById("mode-explore").addEventListener("click", function () { setMode("explore"); });
   document.getElementById("mode-tour").addEventListener("click", function () { setMode("tour"); });
-  document.getElementById("open-q").addEventListener("click", function () { state.view = "questions"; state.prop = null; render(); });
 
   document.addEventListener("keydown", function (ev) {
     if (ev.key === "Escape" && state.view !== "hint" && state.view !== "tour") return closeDetail();

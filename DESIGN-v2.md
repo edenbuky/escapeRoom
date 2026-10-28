@@ -8,8 +8,8 @@ Version 2. This document replaces the v1 design (one backend, modular monolith).
 - **Headless.** The backend is the judge. It holds the sandboxes, the answers, the clock and the rules, and it decides every outcome. It never draws a screen. The React frontend only presents state and collects input, so a player cannot cheat by editing the page.
 - **Scripts are content, not code.** A **Script** is a list in the database: which puzzles, in which rooms, in what order, and the starting state of each. The engine runs any Script as a state machine. Changing the order, the rooms or the puzzles is a new Script version, not a code change. Only a brand-new kind of engine needs code.
 - **The escape room is one Script on the platform.** It is the demo content (section 13). A later game is another Script and another skin over the same services. There is no second backend.
-- **Five microservices.** Each is its own NestJS app, its own deployable, with its own database (the gateway has none). They talk through Azure Service Bus, plus exactly four direct internal HTTP calls.
-- **A mistake never ends the game.** If a player's command breaks ("ruins") a puzzle, the puzzle or the whole room resets to a fresh copy and the player keeps going while the clock keeps running (decision D1).
+- **Five microservices.** Each is its own NestJS app, its own deployable, with its own database (the gateway's holds user accounts and refresh-token families only). They talk through Azure Service Bus, plus exactly four direct internal HTTP calls.
+- **A mistake never ends the game.** If a player's command breaks ("ruins") a puzzle, the puzzle or the whole room resets to a fresh copy and the player keeps going while the clock keeps running.
 
 ## 2. Technology Stack
 
@@ -17,14 +17,14 @@ Version 2. This document replaces the v1 design (one backend, modular monolith).
 | --- | --- |
 | Services | NestJS + TypeScript for every service. REST is documented in OpenAPI (Swagger). No Java. |
 | Frontend | React + TypeScript. Presents state and collects input only. Never touches Postgres, Redis or Service Bus. |
-| Sign-in | Microsoft Entra ID. No passwords stored. Roles (player, admin) are enforced on the server. |
+| Sign-in | JWT access token (HS256, 15 min) plus a rotating refresh token, issued by gateway-api at `/auth/*`. The token carries the user id, not the role. Passwords are stored only as argon2id hashes. Roles (player, admin) are enforced on the server. |
 | Database | PostgreSQL via TypeORM, with migrations. Each service has its own database. |
 | Messaging | Azure Service Bus with sessions enabled (one player session = one ordered stream). |
 | Reliable messaging | Outbox and inbox tables in each service database. |
 | Cache and locks | Redis, for caching and distributed locks only. Never the source of truth. |
 | Live updates | Server-Sent Events (SSE) from the projection service to the browser. |
 | Sandboxes | Docker containers with the gVisor runtime (`runsc`), on a separate sandbox node pool. |
-| Terminal view | xterm.js, line by line (decision D2). |
+| Terminal view | xterm.js, line by line. |
 | SQL view | Thin: one command box and one result grid. |
 | Crypto puzzles | Node crypto, on a worker_threads pool inside game-engine. |
 | Skin images | Blob Storage + CDN, read only by the browser. |
@@ -34,11 +34,11 @@ Version 2. This document replaces the v1 design (one backend, modular monolith).
 
 | Service | What it does | Database | Public? |
 | --- | --- | --- | --- |
-| **gateway-api** | The public front door. Validates the Entra token, checks the role and that the player owns the session. Validates the command, puts it on Service Bus and replies 202 ("received") at once. | none | yes |
+| **gateway-api** | The public front door. Its auth module issues tokens at `/auth/*` (access token + rotating refresh token). On every request it checks the access token, reads `gateway_db` (user active, token version, refresh family) and loads the role, then checks the role and that the player owns the session. Validates the command, puts it on Service Bus and replies 202 ("received") at once. | gateway_db (users and refresh tokens) | yes |
 | **game-engine** | The brain. Runs the Script state machine, owns sessions and puzzle progress, builds puzzles with the Component Factory, checks crypto answers, runs the inbox, outbox and the stuck-session janitor. | engine_db | no |
 | **sandbox-manager** | The only service with access to the Docker API. Creates, health-checks, times out and destroys containers, runs sandbox commands, and reaps leftovers. Runs on the sandbox node pool. | sandbox_db | no |
 | **script-catalog** | The library of Script versions and Component Templates: authoring, validation, publish. Clears the cache on publish. | catalog_db | no |
-| **projection** | The read model. Listens to game events, keeps a ready-to-show copy of each session, and pushes it to the browser over SSE. | projection_db | yes |
+| **projection** | The read model. Listens to game events, keeps a ready-to-show copy of each session, and pushes it to the browser over SSE. Also serves the admin overview (`GET /admin/overview`) from one Redis key, `admin:overview`. | projection_db | yes |
 
 Modules inside game-engine (one process, not separate services): state machine, Component Factory, crypto checks, inbox + outbox, janitor.
 
@@ -63,7 +63,6 @@ Why each piece is separate:
 flowchart TB
   UI["React app (browser)<br/>xterm.js terminal · SQL box · forms"]
   CDN[("Blob Storage + CDN<br/>skin images")]
-  ENTRA["Microsoft Entra ID"]
 
   GW["gateway-api<br/>public REST · auth · intake"]
   PROJ["projection<br/>read model · SSE"]
@@ -80,8 +79,9 @@ flowchart TB
   CDB[("catalog_db")]
   SDB[("sandbox_db")]
   PDB[("projection_db")]
+  GDB[("gateway_db")]
 
-  UI -- "sign-in" --> ENTRA
+  UI -- "signup, login, refresh, access token" --> GW
   UI -- "skin images" --> CDN
   UI -- "REST commands" --> GW
   PROJ -- "SSE live updates" --> UI
@@ -102,11 +102,12 @@ flowchart TB
   CAT --> CDB
   SBM --> SDB
   PROJ --> PDB
+  GW --> GDB
 ```
 
 - Solid arrows are REST, SSE, Service Bus and database traffic. Dotted arrows are the four direct HTTP calls.
 - What travels on each Service Bus arrow is shown in section 5.
-- Redis is not drawn. It is a cache and lock store only (section 7), and it is not part of correctness.
+- Redis is not drawn. It is a cache and lock store only (section 8), and it is not part of correctness. projection uses it for one key only, `admin:overview`.
 
 ## 5. Messaging: Events and Direct Calls
 
@@ -164,25 +165,34 @@ Why the bus for each flow:
 
 ### The Four Direct HTTP Calls
 
-These four are the only direct service-to-service calls.
+These four are the only direct service-to-service calls. Checking a JWT is local, so it adds no call.
 
 | From | To | Route | When and why |
 | --- | --- | --- | --- |
 | game-engine | sandbox-manager | `POST /internal/sandboxes/:id/exec` | Every sandbox command. Synchronous because the command needs its output. |
 | game-engine | script-catalog | `GET /internal/scripts/:id/versions/:v` and `GET /internal/templates/:key/versions/:v` | Cache miss only. Published versions never change, so they are cached for 24 h. |
-| gateway-api | game-engine | `GET /internal/sessions/:id/owner` | Cache miss only. The gateway has no database of its own. |
+| gateway-api | game-engine | `GET /internal/sessions/:id/owner` | Cache miss only. gateway_db holds users and refresh tokens only; session owners live in engine_db. |
 | gateway-api | script-catalog | `/admin/*` routes | Admin role is checked at the gateway. Publishing is rare and needs an immediate valid/invalid answer, so it is synchronous. |
 
 ### Public Routes
 
 | Route | Service | Use |
 | --- | --- | --- |
+| `POST /auth/signup` | gateway-api | Create a player account. |
+| `POST /auth/login` | gateway-api | Username + password, returns an access token + refresh token. |
+| `POST /auth/refresh` | gateway-api | Swap a refresh token for a new access token + new refresh token. |
+| `POST /auth/logout` | gateway-api | Revoke one refresh family (this device). |
+| `POST /auth/logout-all` | gateway-api | Revoke all the user's refresh families. |
+| `GET /me` | gateway-api | The signed-in user (player, admin). |
+| `GET /admin/users` | gateway-api | List users (admin; a player gets 403). |
+| `GET /health` | gateway-api | Returns `{status, db}`; runs `SELECT 1` on gateway_db. |
 | `POST /sessions` `{scriptSlug, requestId}` | gateway-api | Start a game. Returns 202 `{sessionId}`. |
 | `POST /sessions/:sid/puzzles/:key/inputs` `{commandId, input}` | gateway-api | Send one command or answer. Returns 202. |
 | `POST /sessions/:sid/reconnect` `{commandId}` | gateway-api | Tell the engine the player is back. |
 | `POST /sessions/:sid/abandon` | gateway-api | Give up the game (owner only). Sends AbandonSession. |
 | `POST /admin/scripts/:id/versions/:v/publish` | gateway-api → script-catalog | Publish a Script version (admin role). |
-| `GET /sessions/:sid/stream` | projection | SSE live updates (Entra token, owner only). |
+| `GET /sessions/:sid/stream` | projection | SSE live updates (JWT, owner only). |
+| `GET /admin/overview` | projection | Admin overview (JWT, admin role). Served by projection directly, not through gateway-api, so it adds no direct service-to-service call. |
 
 ## 6. Scripts and Components
 
@@ -351,7 +361,7 @@ Only sandbox kinds (`sql`, `terminal-git`) can be ruined. A wrong answer on an i
 - **Exec** (HTTP from the engine, carries the commandId): if a stored result exists for that commandId, return it, so a redelivery never runs a command twice. Otherwise run the command with a 5 s timeout and a 64 KB output cap, run the checks, store and return the result. Each exec extends the idle lease by `SANDBOX_IDLE_MINUTES` (15).
 - **Destroy:** remove the container, mark it destroyed, send SandboxDestroyed. A missing container counts as success.
 - **Reconnect rule:** a sandbox never keeps state across a reconnect. A reconnect gives every open sandbox puzzle generation+1 and a fresh container.
-- **Terminal (decision D2):** line by line. Each Enter is one SubmitInput. No interactive terminal (no vim, no less) and no WebSocket. The sandbox image sets `GIT_PAGER=cat` and `PAGER=cat`, so `git log` and `git show` print straight through. The xterm.js view keeps a prompt, local line editing and up-arrow history.
+- **Terminal:** line by line. Each Enter is one SubmitInput. No interactive terminal (no vim, no less) and no WebSocket. The sandbox image sets `GIT_PAGER=cat` and `PAGER=cat`, so `git log` and `git show` print straight through. The xterm.js view keeps a prompt, local line editing and up-arrow history.
 
 Isolation for every container:
 
@@ -407,13 +417,14 @@ Redis is for caching and locks only. If Redis errors or takes more than 50 ms, s
 | `lock:relay:{service}` | outbox relay leader | 15 s, renewed |
 | `lock:janitor:{service}` | cleanup job leader | 60 s |
 | `lock:provision:{sandboxId}` | one container create at a time | held while creating |
+| `admin:overview` | admin overview, owned by projection (section 12) | overwritten on SessionStarted, SessionEscaped, SessionExpired, SessionAbandoned |
 
 Rules:
 
-- **One read point.** Every session read goes through one SessionReader (gateway: `getSessionOwner`; engine read API: `getSessionSnapshot`). The session cache lives only there. The session cache is kept (proposal P2 was rejected).
+- **One read point.** Every session read goes through one SessionReader (gateway: `getSessionOwner`; engine read API: `getSessionSnapshot`). The session cache lives only there.
 - **Cache-aside.** After commit the writer deletes `session:{id}`. Refilling uses a compare-and-set: write only if the cached version is older, so a slow reader cannot put an old snapshot back.
 - **Publish.** The catalog commits the pointer change and the outbox row, then deletes the pointer key. The engine deletes it again when it receives ScriptVersionPublished. Worst case is the 60 s lifetime.
-- projection does not use Redis. Live updates go through Postgres LISTEN/NOTIFY.
+- projection uses one key only, `admin:overview`. Live updates go through Postgres LISTEN/NOTIFY.
 
 ## 9. Data Model
 
@@ -562,6 +573,39 @@ erDiagram
 
 - projection writes `session_view` only when an event's sessionVersion is newer than the stored version.
 
+### gateway_db (gateway-api)
+
+```mermaid
+erDiagram
+  users ||--o{ refresh_families : has
+  refresh_families ||--o{ refresh_tokens : has
+  users {
+    uuid id PK
+    string username UK
+    string email UK
+    string displayName
+    string passwordHash
+    string role
+    string status
+    int tokenVersion
+    timestamp createdAt
+    timestamp updatedAt
+  }
+  refresh_families {
+    uuid id PK
+    uuid user_id FK
+  }
+  refresh_tokens {
+    uuid id PK
+    uuid family_id FK
+  }
+```
+
+- `passwordHash` is an argon2id hash; plain-text passwords are never stored or logged.
+- `users.role`: player, admin.
+- The schema comes from the TypeORM migration `1740000000000-InitialSchema`, with `synchronize` off (false).
+- Seed the admin with `npm run seed:admin` (safe to run twice). Local reset: `npm run db:reset -- --confirm-local-reset`.
+
 ## 10. Session Lifecycle
 
 ### Session Status
@@ -579,7 +623,7 @@ stateDiagram-v2
 
 - Escaped, Expired and Abandoned are final; there is no way out of them.
 - Abandoned: the player sends `POST /sessions/:sid/abandon` (owner only; gateway-api sends AbandonSession), or the janitor abandons a session idle for `ABANDON_MINUTES`.
-- A ruin is not an ending (decision D1). It resets the puzzle or the room and the clock keeps running. Ruins stay visible in stats through the PuzzleReset event and the command log verdict `ruined`.
+- A ruin is not an ending. It resets the puzzle or the room and the clock keeps running. Ruins stay visible in stats through the PuzzleReset event and the command log verdict `ruined`.
 
 ### Puzzle Status
 
@@ -620,6 +664,38 @@ sandbox-manager reaper (every 60 s on each host):
 - A ready sandbox whose health probe fails 3 times in a row → destroy and SandboxFailed (the engine provisions again).
 
 ## 11. Key Flows
+
+### F0 Signup/Login, Access and Refresh
+
+```mermaid
+sequenceDiagram
+  participant UI as React app
+  participant GW as gateway-api
+  participant GDB as gateway_db
+  UI->>GW: POST /auth/signup (new account)
+  Note over GW: store argon2id hash
+  UI->>GW: POST /auth/login (username, password)
+  GW->>GDB: find user
+  Note over GW: argon2id check vs passwordHash
+  GW->>GDB: new refresh family + token
+  GW-->>UI: access token + refresh token
+  UI->>GW: call with Bearer access token
+  Note over GW: check signature, iss, aud, exp
+  GW->>GDB: user active, version, family
+  GDB-->>GW: user row (role)
+  Note over GW: check role, then owner
+  GW-->>UI: response, or 401 / 403 / 503
+  UI->>GW: POST /auth/refresh (refresh token)
+  Note over GW: old token marked used, new one issued
+  GW-->>UI: new access token + refresh token
+```
+
+Reusing an already-used refresh token revokes its whole family; logout revokes one family; logout-all revokes all the user's families and bumps `tokenVersion`.
+
+- The access token is an HS256 JWT signed with `JWT_ACCESS_SECRET`, with `iss` = `JWT_ISSUER`, `aud` = `JWT_AUDIENCE` and a lifetime of `JWT_ACCESS_TTL` (900 s). It carries `sub` (userId), `fid` (refresh family id) and `ver` (tokenVersion). It does not carry the role.
+- gateway-api's guard checks signature, `iss`, `aud` and `exp`, then reads gateway_db on every request: the user is active, `tokenVersion` equals `ver`, and the family is neither revoked nor expired. It loads the role from the users row, then checks the role, then the owner. If the database is unreachable it returns 503.
+- The refresh token lives for `REFRESH_TOKEN_TTL_DAYS` and is replaced on every refresh.
+- projection verifies the same access token on the SSE stream and on `GET /admin/overview` with `JWT_ACCESS_SECRET`, `JWT_ISSUER` and `JWT_AUDIENCE`, and does not call gateway-api.
 
 ### F1 Start a Game
 
@@ -705,7 +781,7 @@ sequenceDiagram
 
 - Intake is the same as F2 (gateway-api, 202).
 - With `resetRoom` the same happens for every puzzle in the room, and solved puzzles in that room go back to open.
-- The session stays Active and the clock keeps running (decision D1).
+- The session stays Active and the clock keeps running.
 
 ### F4 Crypto Answer (Hash, RSA, TLS)
 
@@ -786,7 +862,7 @@ sequenceDiagram
   participant SB as Service Bus
   participant ENG as game-engine
   A->>GW: POST /admin/scripts/:id/versions/:v/publish
-  Note over GW: Entra token + admin role
+  Note over GW: JWT + admin role
   GW->>CAT: HTTP publish
   Note over CAT: validate
   Note over CAT: commit status, pointer, outbox
@@ -800,16 +876,58 @@ sequenceDiagram
 
 - New sessions use the new version; running sessions keep theirs.
 
+### F8 Admin Overview
+
+```mermaid
+sequenceDiagram
+  participant A as Admin (React app)
+  participant PROJ as projection
+  participant R as Redis
+  participant PDB as projection_db
+  participant SB as Service Bus
+  A->>PROJ: GET /admin/overview
+  Note over PROJ: JWT + admin role
+  PROJ->>R: read admin:overview
+  R-->>PROJ: overview, or miss
+  Note over PROJ: on a miss or Redis down
+  PROJ->>PDB: compute overview
+  PROJ->>R: store admin:overview
+  PROJ-->>A: overview
+  SB->>PROJ: SessionStarted, SessionEscaped, SessionExpired, SessionAbandoned
+  PROJ->>PDB: recompute overview
+  PROJ->>R: overwrite admin:overview
+```
+
+- Served by projection directly; no new service-to-service call.
+- Not refreshed on every move, only when a session starts or ends.
+
 ## 12. Real-Time Updates (projection)
 
-- projection does not use Redis. Live updates go through Postgres LISTEN/NOTIFY.
+- projection uses one Redis key only, `admin:overview`. Live updates go through Postgres LISTEN/NOTIFY.
 - projection reads game-events in order per session and updates `session_view` only if the event is newer than what it has. Then it sends a Postgres NOTIFY.
-- Every projection instance LISTENs and pushes to its own SSE connections at `GET /sessions/:sid/stream` (Entra token, owner only).
+- Every projection instance LISTENs and pushes to its own SSE connections at `GET /sessions/:sid/stream`. projection verifies the access token's signature, `iss`, `aud` and `exp` with `JWT_ACCESS_SECRET` (plus `JWT_ISSUER`, `JWT_AUDIENCE`) and checks the owner via `sub`, with no call to gateway-api.
 - On connect or reconnect it sends the current snapshot first (id = version), then changes. Last-Event-ID lets the browser skip versions it already has.
 - Why SSE and not WebSocket: commands already go over REST, the push is one-way, and SSE reconnects by itself and resumes from the last version.
 - The browser shows only the view: puzzle statuses, command output, a countdown from `deadlineAt`, and "sandbox restarting".
 
-## 13. Demo Script: The Escape Room (decision D3)
+### Admin Overview
+
+projection serves `GET /admin/overview` directly. It is already public for SSE, and it checks the JWT (with the same `JWT_ACCESS_SECRET`) and the admin role. There is no new service-to-service HTTP call; there are still exactly four (section 5).
+
+What the Redis key `admin:overview` holds (owner: projection):
+
+| Field | Meaning |
+| --- | --- |
+| `gamesInProgress` | live count of Active sessions |
+| `gamesFinishedToday` | `{escaped, expired, abandoned}`: sessions that ended today, by ending |
+| `perPuzzle[]` | `{puzzleKey, avgSolveSeconds, wrongAttempts, ruinResets}` per puzzle |
+
+- `wrongAttempts` counts CommandEvaluated events with verdict `rejected` and reason `wrongAnswer`. Policy blocks, sandbox restarting and time-up are not counted. `ruinResets` counts PuzzleReset events.
+- "Today" is the calendar day in the server's configured timezone.
+- **Refresh:** on SessionStarted, SessionEscaped, SessionExpired and SessionAbandoned, projection recomputes the overview from projection_db and overwrites the key. Not on every move.
+- **Fallback:** if the key is missing or Redis is down, projection computes the overview from projection_db, stores it and returns it. Postgres stays the source of truth.
+
+## 13. Demo Script: The Escape Room
 
 The escape room from the story script is the demo content. It is data only; the engine runs it like any other Script. The experience is built from clickable images (the skin), and the server drives it.
 
@@ -876,19 +994,30 @@ flowchart TB
 
 ## 15. Later Features
 
-These only subscribe to game-events; the engine does not change for them: hints, admin statistics, SkillSwapper lookup, Clippy coach.
+These only subscribe to game-events; the engine does not change for them: hints, SkillSwapper lookup, Clippy coach.
+
+The admin overview is part of projection (section 12), not a later feature.
 
 ## 16. Environment Configuration
 
-Each service has a `.env.example`. Real values live in Azure Key Vault.
+Each service has a `.env.example`. Every secret is a `REPLACE_...` placeholder there; no real values in git. Real values live in Azure Key Vault.
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `SERVICEBUS_NAMESPACE` | | Azure Service Bus namespace |
-| `DATABASE_URL` | | the service's own database |
+| `DATABASE_URL` | | the service's own database (every service except gateway-api) |
 | `REDIS_URL` | | Redis cache and locks |
-| `ENTRA_TENANT_ID` | | Microsoft Entra tenant |
-| `ENTRA_API_CLIENT_ID` | | Entra app id of the API |
+| `DB_HOST` | | gateway_db host (gateway-api) |
+| `DB_PORT` | 5432 | gateway_db port (gateway-api) |
+| `DB_USER` | | gateway_db user (gateway-api) |
+| `DB_PASSWORD` | | gateway_db password (gateway-api) |
+| `DB_NAME` | | gateway_db name (gateway-api) |
+| `DB_SSL` | false | use TLS to gateway_db (gateway-api) |
+| `JWT_ACCESS_SECRET` | | secret that signs and verifies access tokens (gateway-api, projection) |
+| `JWT_ACCESS_TTL` | 900 | access token lifetime in seconds (gateway-api) |
+| `JWT_ISSUER` | escape-room-api | token issuer, `iss` (gateway-api, projection) |
+| `JWT_AUDIENCE` | escape-room-client | token audience, `aud` (gateway-api, projection) |
+| `REFRESH_TOKEN_TTL_DAYS` | 7 | refresh token lifetime in days (gateway-api) |
 | `CORS_ORIGINS` | | allowed browser origins (gateway-api, projection) |
 | `SANDBOX_IDLE_MINUTES` | 15 | idle lease per sandbox |
 | `SANDBOX_MAX_LIFETIME_MINUTES` | 120 | hard cap per sandbox |
@@ -899,35 +1028,17 @@ Each service has a `.env.example`. Real values live in Azure Key Vault.
 | `INBOX_RETENTION_DAYS` | 14 | keep inbox rows |
 | `SWAGGER_ENABLED` | | turn the OpenAPI (Swagger) page on or off |
 
-Frontend: `VITE_API_BASE_URL`, `VITE_ENTRA_CLIENT_ID`, `VITE_ENTRA_TENANT_ID`, `VITE_ENTRA_API_SCOPE`, `VITE_ASSETS_BASE_URL`.
+Frontend: `VITE_API_BASE_URL`, `VITE_ASSETS_BASE_URL`.
+
+gateway-api loads its config in `src/config/config.ts` via dotenv. Its `.env.example` uses `REPLACE_...` placeholders. No secrets in git.
 
 Variables per service:
 
 | Service | Variables |
 | --- | --- |
-| gateway-api | `SERVICEBUS_NAMESPACE`, `REDIS_URL`, `ENTRA_TENANT_ID`, `ENTRA_API_CLIENT_ID`, `CORS_ORIGINS`, `SWAGGER_ENABLED` (no `DATABASE_URL`) |
+| gateway-api | `SERVICEBUS_NAMESPACE`, `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_SSL` (gateway_db), `REDIS_URL`, `JWT_ACCESS_SECRET`, `JWT_ACCESS_TTL`, `JWT_ISSUER`, `JWT_AUDIENCE`, `REFRESH_TOKEN_TTL_DAYS`, `CORS_ORIGINS`, `SWAGGER_ENABLED` |
 | game-engine | `SERVICEBUS_NAMESPACE`, `DATABASE_URL`, `REDIS_URL`, `ABANDON_MINUTES`, `OUTBOX_RETENTION_DAYS`, `INBOX_RETENTION_DAYS` |
 | sandbox-manager | `SERVICEBUS_NAMESPACE`, `DATABASE_URL`, `REDIS_URL`, `SANDBOX_*`, `OUTBOX_RETENTION_DAYS`, `INBOX_RETENTION_DAYS` |
 | script-catalog | `SERVICEBUS_NAMESPACE`, `DATABASE_URL`, `REDIS_URL`, `OUTBOX_RETENTION_DAYS` |
-| projection | `SERVICEBUS_NAMESPACE`, `DATABASE_URL`, `ENTRA_TENANT_ID`, `ENTRA_API_CLIENT_ID`, `CORS_ORIGINS`, `INBOX_RETENTION_DAYS` |
+| projection | `SERVICEBUS_NAMESPACE`, `DATABASE_URL`, `REDIS_URL`, `JWT_ACCESS_SECRET`, `JWT_ISSUER`, `JWT_AUDIENCE`, `CORS_ORIGINS`, `INBOX_RETENTION_DAYS` |
 | frontend | the `VITE_*` variables above |
-
-## 17. Decisions Made
-
-| Id | Decision (Daniel, 2026-10-27) |
-| --- | --- |
-| D1 | A ruin never ends the game. It resets the puzzle or the room; the clock keeps running. Endings stay Escaped, Expired, Abandoned. |
-| D2 | Line-by-line terminal. No interactive terminal, no WebSocket. The sandbox sets `GIT_PAGER=cat` and `PAGER=cat`. |
-| D3 | Keep the story-script puzzles as the demo script. A Script is content in the database; the engine runs any Script. |
-| P2 | Rejected. The Redis session cache stays. |
-
-## 18. Open Decisions
-
-Not decided yet. The body of this document describes the current five-service design.
-
-| Id | Question | Proposal |
-| --- | --- | --- |
-| (a) | What goes in the admin overview (Redis key `admin:overview`)? | Active sessions, finished today, average solve time per puzzle, wrong attempts per puzzle. Owned by projection, served as `GET /admin/overview` through gateway-api (admin role), rebuilt when a session ends, read from projection_db on a miss. |
-| P1 | Fold script-catalog into game-engine as a module? | Gains: one fewer service, database, topic and cache-clearing path. Costs: admin publishing shares a process with live games. |
-| P3 | Fold projection into game-engine for the demo? | Gains: one fewer service and database. Costs: lose a separately scalable read side; SSE load lands on the core. |
-| P4 | Keep gateway-api, sandbox-manager and Service Bus as they are? | Why: auth in one place, Docker kept away from the core, per-player ordering. |

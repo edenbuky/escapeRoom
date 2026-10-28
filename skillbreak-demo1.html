@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SkillBreak · Demo 1: Local Setup &amp; Backend–Database Flow</title>
+<!-- Self-contained: no CDN, no web fonts, no outside requests. Works offline from file://. -->
+<style>
+:root{--bg:#0f1419;--panel:#161d25;--line:#2a3542;--text:#e6edf3;--muted:#8b98a5;--acc:#3ddc97;--accd:rgba(61,220,151,.14);
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#0a0e12;color:var(--text);font-family:var(--sans);overflow:hidden}
+#viewport{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#stage{position:absolute;left:50%;top:50%;width:1600px;height:900px;background:var(--bg);transform-origin:center center;overflow:hidden;
+  box-shadow:0 0 0 1px var(--line)}
+.slide{position:absolute;inset:0;padding:88px 110px 110px;display:none;flex-direction:column}
+.slide.active{display:flex}
+.kicker{font:600 22px var(--mono);color:var(--acc);letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px}
+h1{font-size:96px;line-height:1.05;letter-spacing:-.02em}
+h2{font-size:58px;line-height:1.1;letter-spacing:-.01em;margin-bottom:40px}
+.sub{font-size:40px;color:var(--muted);margin-top:24px}
+.body{display:flex;gap:56px;flex:1;min-height:0}
+.body>ul{flex:1 1 46%}
+ul{list-style:none}
+li{font-size:32px;line-height:1.35;margin-bottom:26px;padding-left:34px;position:relative}
+li::before{content:"";position:absolute;left:0;top:.5em;width:12px;height:12px;border-radius:2px;background:var(--acc)}
+li small{display:block;font-size:24px;color:var(--muted);margin-top:4px}
+code,.mono{font-family:var(--mono);font-size:.9em;color:#c9d6e2}
+/* Screenshot frame: to use a real image, put <img src="shots/x.png" alt=""> inside the div and delete the <span>. */
+.shot{flex:1 1 54%;border:2px dashed var(--line);border-radius:14px;display:flex;align-items:center;justify-content:center;
+  text-align:center;color:var(--muted);font:500 24px var(--mono);padding:24px;background:repeating-linear-gradient(45deg,transparent 0 18px,rgba(255,255,255,.015) 18px 36px);overflow:hidden}
+.shot img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px}
+.shot.small{flex:0 0 auto;height:230px;margin-top:auto}
+/* Editable chips: .ex = architect's example value (not confirmed); .ph = placeholder to fill in */
+.ex,.ph{font-family:var(--mono);font-size:.85em;border:2px dashed var(--acc);border-radius:8px;padding:1px 10px;white-space:nowrap;outline:none;position:relative;display:inline-block;line-height:1.3}
+.ex::after,.ph::after{content:"example";position:absolute;top:-13px;right:6px;font:700 12px var(--sans);letter-spacing:.06em;text-transform:uppercase;background:var(--bg);color:var(--acc);padding:0 4px}
+.ph{border-color:#e3b341;color:#f0d78a}.ph::after{content:"to fill";color:#e3b341}
+.ex{color:#bff3db;background:var(--accd)}
+/* Step strip */
+.strip{display:flex;align-items:stretch;gap:0;margin:20px 0 50px}
+.step{flex:1;border:2px solid var(--line);border-radius:14px;padding:22px 16px;background:var(--panel);text-align:center;font-size:28px;font-weight:600}
+.step b{display:block;font:700 20px var(--mono);color:var(--acc);margin-bottom:8px}
+.arrow{align-self:center;color:var(--acc);font-size:36px;padding:0 10px}
+.step.hot{border-color:var(--acc);background:var(--accd)}
+/* Flow diagram (slide 7) */
+.flow{display:flex;gap:0;margin-bottom:34px}
+.fstep{flex:1;background:var(--panel);border:2px solid var(--line);border-top:6px solid var(--acc);border-radius:12px;padding:20px 22px;font-size:25px;line-height:1.6}
+.s7 .fstep{font-size:22px;line-height:1.4;padding:14px 18px}
+.s7 .fstep .n{width:34px;height:34px;font-size:19px;margin-bottom:4px}
+.s7c .ev.tight li{font-size:23px;margin-bottom:8px}
+.fstep .ex{margin:10px 0 4px}
+.fstep .n{display:inline-flex;width:40px;height:40px;border-radius:50%;background:var(--acc);color:#06281a;font:800 22px var(--sans);align-items:center;justify-content:center;margin-bottom:10px}
+.cols{display:flex;gap:48px;flex:1;min-height:0}
+.cols>ul{flex:1 1 50%}.cols li{font-size:28px;margin-bottom:18px}
+.cols .shot{flex:1 1 50%}
+.vs{display:flex;gap:30px;margin-bottom:28px}
+.card{flex:1;border:2px solid var(--line);border-radius:14px;padding:22px 26px;background:var(--panel)}
+.card h3{font:700 30px var(--mono);margin-bottom:10px;color:var(--acc)}
+.card p{font-size:26px;line-height:1.4;color:var(--text)}
+.title-wrap{margin:auto 0}
+.meta{margin-top:70px;font-size:28px;color:var(--muted)}
+.btn-big{display:inline-block;margin-top:40px;background:var(--acc);color:#06281a;font:800 40px var(--sans);padding:26px 48px;border-radius:16px;text-decoration:none}
+.btn-big:hover{filter:brightness(1.1)}
+.tag{font:700 20px var(--sans);color:#e3b341;border:2px solid #e3b341;border-radius:999px;padding:2px 14px;vertical-align:middle;margin-left:12px}
+.split{display:flex;gap:70px;flex:1;align-items:center}
+.split>div{flex:1}
+/* KPI blocks: Target + Evidence */
+.kpi{display:flex;flex-direction:column;gap:18px;flex:1 1 50%;min-width:0}
+.lbl{font:700 17px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--acc);margin-bottom:8px;display:block}
+.target{border-left:5px solid var(--acc);background:var(--panel);border-radius:0 12px 12px 0;padding:16px 22px;font-size:26px;line-height:1.4}
+.ev li{font-size:28px;margin-bottom:16px}
+.ev li small{font-size:22px}
+.ev code{white-space:nowrap}
+.ev.tight li{font-size:25px;margin-bottom:10px}
+.trace{display:flex;align-items:center;gap:10px;font:600 20px var(--mono);margin:0 0 18px;flex-wrap:nowrap}
+.trace span.t{white-space:nowrap;border:1px solid var(--line);border-radius:8px;padding:8px 14px;background:var(--panel)}
+.trace .arrow{font-size:24px;padding:0 2px}
+.shots{display:flex;gap:24px;flex:1;min-height:0}
+.foot{position:absolute;left:110px;bottom:40px;font:600 18px var(--mono);color:var(--muted);letter-spacing:.06em}
+.quote{font-size:30px;line-height:1.45;border-left:5px solid var(--line);padding:6px 0 6px 24px;margin:8px 0 0;color:var(--text)}
+.cmd{font:500 19px/1.6 var(--mono);background:#0b1016;border:1px solid var(--line);border-radius:10px;padding:12px 18px;white-space:pre;color:#c9d6e2;margin-bottom:14px}
+.kpi .target{font-size:23px;padding:12px 20px}
+/* Chrome outside the stage */
+#menu{position:fixed;top:12px;right:14px;z-index:5;display:flex;gap:8px}
+#menu a,#menu button,#nav button{font:600 14px var(--sans);color:var(--text);background:rgba(22,29,37,.9);border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer;text-decoration:none}
+#menu a{color:var(--acc);border-color:var(--acc)}
+#nav{position:fixed;bottom:10px;left:0;right:0;z-index:5;display:flex;align-items:center;justify-content:center;gap:12px}
+#dots{display:flex;gap:7px}
+#dots button{width:12px;height:12px;padding:0!important;border-radius:50%!important;background:var(--line)!important}
+#dots button.on{background:var(--acc)!important}
+#count{font:600 14px var(--mono);color:var(--muted);min-width:46px;text-align:center}
+#bar{position:fixed;top:0;left:0;height:3px;background:var(--acc);z-index:6;transition:width .25s}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="menu"><a class="design" href="architecture-explainer.html" target="_blank" rel="noopener">Design ↗</a><button id="fs" type="button" title="Fullscreen (F)">⛶ Full</button></div>
+<div id="viewport"><div id="stage">
+
+<!-- 1 · Title -->
+<section class="slide" data-title="Title"><div class="title-wrap">
+  <div class="kicker">Projecthon — Demo 1</div>
+  <h1>SkillBreak</h1>
+  <p class="sub">Demo 1: Local Setup &amp; Backend–Database Flow</p>
+  <p class="meta">Amit &amp; Eden &nbsp;·&nbsp; 29/10/26</p>
+</div></section>
+
+<!-- 2 · Agenda -->
+<section class="slide" data-title="Agenda">
+  <div class="kicker">Agenda</div><h2>Demo flow</h2>
+  <div class="strip">
+    <div class="step"><b>01</b>Start via README</div><span class="arrow">→</span>
+    <div class="step"><b>02</b>.env</div><span class="arrow">→</span>
+    <div class="step"><b>03</b>ORM entity + schema</div><span class="arrow">→</span>
+    <div class="step hot"><b>04</b>Swagger create / read</div><span class="arrow">→</span>
+    <div class="step"><b>05</b>Persistence restart</div><span class="arrow">→</span>
+    <div class="step"><b>06</b>Demo 2 feature</div>
+  </div>
+  <ul><li>One small API operation, on the actual backend and running database</li><li>Focus: <b>JWT authentication</b> and the <b>API → database</b> flow</li></ul>
+  <div class="foot">Projecthon — Demo 1 · SkillBreak</div>
+</section>
+
+<!-- 3 · Local Setup -->
+<section class="slide" data-title="Local Setup">
+  <div class="kicker">KPI · Local setup</div><h2 style="margin-bottom:28px">Local Setup</h2>
+  <div class="body"><div class="kpi">
+    <div><span class="lbl">Target</span><div class="target">100% of setup steps in the README; no undocumented manual steps.</div></div>
+    <div><span class="lbl">Evidence</span><div class="cmd">cp .env.example .env
+docker compose run --rm --no-deps api npm ci
+docker compose up -d --wait postgres
+docker compose run --rm api npm run migration:run
+docker compose run --rm api npm run seed:admin
+docker compose up -d api</div><ul class="ev tight"><li><code>GET /health</code> → <code>{"status":"ok","db":"up"}</code> <small>runs <code>SELECT 1</code> against Postgres</small></li><li>Logs: <code>docker compose logs -f api</code></li><li>Swagger: <code>http://localhost:3000/api/docs</code></li></ul></div>
+  </div>
+  <div class="shot" data-shot="readme-terminal"><!-- <img src="shots/readme-terminal.png" alt="README / terminal + GET /health"> --><span>Screenshot: README / terminal + GET /health</span></div></div>
+  <div class="foot">Projecthon — Demo 1 · SkillBreak</div>
+</section>
+<!-- 4 · Environment Configuration -->
+<section class="slide" data-title="Environment Configuration">
+  <div class="kicker">KPI · Environment configuration</div><h2 style="margin-bottom:28px">Environment Configuration</h2>
+  <div class="body"><div class="kpi">
+    <div><span class="lbl">Target</span><div class="target">100% of DB config variables read from local <code>.env</code>; <code>.env.example</code> lists every one with placeholders; <code>.env</code> git-ignored; zero real secrets committed.</div></div>
+    <div><span class="lbl">Evidence</span><ul class="ev tight"><li><code>.env.example</code> (only env file tracked in git): <small><code>DB_HOST</code> <code>DB_PORT</code> <code>DB_USER</code> <code>DB_PASSWORD</code> <code>DB_NAME</code> <code>DB_SSL</code> · <code>REPLACE_...</code> placeholders</small></li><li><code>src/config/config.ts</code>: <code>import 'dotenv/config'</code> <small>API, migration CLI and seed all use the same <code>loadConfig()</code></small></li><li><code>.gitignore</code>: <code>.env</code>, <code>.env.*</code>, <code>!.env.example</code></li><li>No secret values shown</li></ul></div>
+  </div>
+  <div class="shot" data-shot="env-example"><!-- <img src="shots/env-example.png" alt=".env.example + config.ts + .gitignore"> --><span>Screenshot: .env.example + config.ts + .gitignore</span></div></div>
+  <div class="foot">Projecthon — Demo 1 · SkillBreak</div>
+</section>
+<!-- 5 · ORM &amp; Data Model -->
+<section class="slide" data-title="ORM &amp; Data Model">
+  <div class="kicker">KPI · ORM and data model</div><h2 style="margin-bottom:28px">ORM &amp; Data Model</h2>
+  <div class="body"><div class="kpi">
+    <div><span class="lbl">Target</span><div class="target">At least 1 ORM-managed entity mapped to a table; demo reads/writes use the ORM, not in-memory data or a mocked repository.</div></div>
+    <div><span class="lbl">Evidence</span><ul class="ev tight"><li>TypeORM <small>data source <code>src/database/data-source.ts</code></small></li><li><code>User</code> → <code>users</code> <small>id (uuid), username, email, displayName, passwordHash, role, status, tokenVersion, timestamps</small></li><li><code>RefreshFamily</code> · <code>RefreshToken</code> <small>1 user → many <code>refresh_families</code> (<code>user_id</code>) → many <code>refresh_tokens</code> (<code>family_id</code>)</small></li></ul></div>
+  </div>
+  <div class="shot" data-shot="entity-code"><!-- <img src="shots/entity-code.png" alt="User entity / data-source.ts"> --><span>Screenshot: User entity / data-source.ts</span></div></div>
+  <div class="foot">Projecthon — Demo 1 · SkillBreak</div>
+</section>
+<!-- 6 · Schema Initialization -->
+<section class="slide" data-title="Schema Initialization">
+  <div class="kicker">KPI · Schema initialization</div><h2 style="margin-bottom:28px">Schema Initialization</h2>
+  <div class="body"><div class="kpi">
+    <div><span class="lbl">Target</span><div class="target">Schema created or updated on a clean local DB with the documented ORM migration tooling; repeatable.</div></div>
+    <div><span class="lbl">Evidence</span><ul class="ev"><li><code>npm run migration:run</code> <small>runs <code>1740000000000-InitialSchema</code> · <code>synchronize: false</code></small></li><li><code>npm run seed:admin</code> <small>does nothing if the configured admin already exists</small></li><li>Clean reset <small><code>npm run db:reset -- --confirm-local-reset</code><br>removes volumes, reinstalls, reruns migration + seed</small></li></ul></div>
+  </div>
+  <div class="shot" data-shot="db-tables"><!-- <img src="shots/db-tables.png" alt="migration result / tables in DB"> --><span>Screenshot: migration result / tables in DB</span></div></div>
+  <div class="foot">Projecthon — Demo 1 · SkillBreak</div>
+</section>
+<!-- 7 · API -> DB (emphasis) -->
+<section class="slide" data-title="API → Database">
+  <div class="kicker">KPI · API-to-database flow</div><h2 style="margin-bottom:16px">API → Database Flow</h2>
+  <div class="target" style="margin-bottom:16px;font-size:23px;padding:10px 22px"><span class="lbl" style="display:inline;margin-right:14px">Target</span>1 real API flow: request through Swagger UI → ORM → running database → expected response.</div>
+  <div class="flow s7" style="margin-bottom:14px">
+    <div class="fstep"><span class="n">1</span><br><code>POST /auth/login</code><br>username + password</div><span class="arrow">→</span>
+    <div class="fstep"><span class="n">2</span><br>Server verifies the <b>argon2id</b> hash, returns access + refresh token</div><span class="arrow">→</span>
+    <div class="fstep"><span class="n">3</span><br>Swagger <b>Authorize</b> (<code>access-token</code>) with the access token</div><span class="arrow">→</span>
+    <div class="fstep"><span class="n">4</span><br>Protected request: guard validates the HS256 JWT, Postgres read/write</div>
+  </div>
+  <div class="trace" style="font-size:16px;gap:6px"><span class="lbl" style="margin:0 8px 0 0">Trace</span><span class="t">Swagger POST /auth/signup</span><span class="arrow">→</span><span class="t">AuthController</span><span class="arrow">→</span><span class="t">AuthService</span><span class="arrow">→</span><span class="t">TypeORM save()</span><span class="arrow">→</span><span class="t">Postgres users</span><span class="arrow">→</span><span class="t">response</span></div>
+  <div class="cols s7c"><div style="flex:1 1 58%"><span class="lbl">Evidence</span><ul class="ev tight">
+    <li><b>Swagger UI only</b>: send the request, show the response</li>
+    <li>No token → <code>401</code>; HS256 signature + expiry checked every request <small><code>JWT_ACCESS_TTL</code> = 900 s</small></li>
+    <li><code>/me</code>: player + admin · <code>/admin/users</code>: admin only <small>player → <code>403</code></small></li>
+  </ul></div>
+  <div class="shot" data-shot="swagger-authorize"><!-- <img src="shots/swagger-authorize.png" alt="Swagger Authorize / response"> --><span>Screenshot: Swagger Authorize / response</span></div></div>
+  <div class="foot">Projecthon — Demo 1 · SkillBreak</div>
+</section>
+
+<!-- 8 · Persistence -->
+<section class="slide" data-title="Persistence">
+  <div class="kicker">KPI · Persistence</div><h2 style="margin-bottom:20px">Persistence</h2>
+  <div class="target" style="margin-bottom:18px;font-size:24px;padding:12px 22px"><span class="lbl" style="display:inline;margin-right:14px">Target</span>1 record created/updated through the API is read back by a later request, and is still there after a backend restart.</div>
+  <span class="lbl">Evidence · data lives in the <code>pgdata</code> Docker volume</span>
+  <div class="strip" style="margin:4px 0 24px">
+    <div class="step"><b>1 · Create</b><code>POST /auth/signup</code></div><span class="arrow">→</span>
+    <div class="step"><b>2 · Read</b><code>GET /me</code></div><span class="arrow">→</span>
+    <div class="step hot"><b>3 · Restart</b><code>docker compose restart api</code></div><span class="arrow">→</span>
+    <div class="step"><b>4 · Read again</b><code>GET /me</code> · same user</div>
+  </div>
+  <div class="shots"><div class="shot" data-shot="before-restart"><!-- <img src="shots/before-restart.png" alt="GET /me before restart"> --><span>Screenshot: GET /me before restart</span></div><div class="shot" data-shot="after-restart"><!-- <img src="shots/after-restart.png" alt="same GET /me after restart"> --><span>Screenshot: same GET /me after restart</span></div></div>
+  <div class="foot">Projecthon — Demo 1 · SkillBreak</div>
+</section>
+
+<!-- 9 · Next-stage readiness -->
+<section class="slide" data-title="Next-stage readiness">
+  <div class="kicker">KPI · Next-stage readiness</div><h2 style="margin-bottom:20px">Next-Stage Readiness</h2>
+  <div class="target" style="margin-bottom:22px;font-size:24px;padding:12px 22px"><span class="lbl" style="display:inline;margin-right:14px">Target</span>1 first committed feature for Demo 2 with its intended outcome; design updated to support it.</div>
+  <span class="lbl">Evidence</span>
+  <ul class="ev" style="margin-top:6px">
+    <li>Demo 2 feature: <b>implement all the microservices except sandbox</b></li>
+    <li><code>gateway-api</code> (front door, auth) · <code>game-engine</code> (the brain) · <code>script-catalog</code> (scripts, templates) · <code>projection</code> (read model, live updates)</li>
+    <li>Not in Demo 2: <code>sandbox-manager</code> (Docker, runs player commands)</li>
+  </ul>
+  <div style="display:flex;align-items:center;gap:56px;margin-top:auto">
+    <a class="btn-big design" style="margin-top:0" href="architecture-explainer.html" target="_blank" rel="noopener">Open the design ↗</a>
+    <span style="font-size:64px;font-weight:800">Q&amp;A</span>
+  </div>
+  <div class="foot">Projecthon — Demo 1 · SkillBreak</div>
+</section>
+
+</div></div>
+<div id="nav"><button id="prev" type="button" aria-label="Previous">←</button><div id="dots"></div><span id="count">1 / 9</span><button id="next" type="button" aria-label="Next">→</button></div>
+<script>
+(function(){
+  var slides=[].slice.call(document.querySelectorAll('.slide')),N=slides.length,cur=0,stage=document.getElementById('stage');
+  var dots=document.getElementById('dots');
+  slides.forEach(function(s,i){var b=document.createElement('button');b.type='button';b.title=(i+1)+' · '+s.dataset.title;
+    b.setAttribute('aria-label','Slide '+(i+1));b.onclick=function(){go(i)};dots.appendChild(b)});
+  function fit(){var w=innerWidth,h=innerHeight-56,s=Math.min(w/1600,h/900);
+    stage.style.transform='translate(-50%,-50%) translateY(-6px) scale('+s+')'}
+  function go(i,noHash){cur=Math.max(0,Math.min(N-1,i));
+    slides.forEach(function(s,k){s.classList.toggle('active',k===cur)});
+    [].forEach.call(dots.children,function(d,k){d.classList.toggle('on',k===cur)});
+    document.getElementById('count').textContent=(cur+1)+' / '+N;
+    document.getElementById('bar').style.width=((cur+1)/N*100)+'%';
+    if(!noHash&&location.hash!=='#'+(cur+1))history.replaceState(null,'','#'+(cur+1))}
+  function fromHash(){var n=parseInt(location.hash.slice(1),10);go(isNaN(n)?0:n-1,true)}
+  function fs(){var d=document;
+    if(d.fullscreenElement){d.exitFullscreen&&d.exitFullscreen()}
+    else{var e=d.documentElement,r=e.requestFullscreen||e.webkitRequestFullscreen;
+      if(r){var p=r.call(e);if(p&&p.catch)p.catch(function(){})}}}
+  document.getElementById('prev').onclick=function(){go(cur-1)};
+  document.getElementById('next').onclick=function(){go(cur+1)};
+  document.getElementById('fs').onclick=fs;
+  addEventListener('keydown',function(e){
+    if(e.target.isContentEditable)return;
+    var k=e.key;
+    if(k==='ArrowRight'||k==='PageDown'||k===' '){e.preventDefault();go(cur+1)}
+    else if(k==='ArrowLeft'||k==='PageUp'){e.preventDefault();go(cur-1)}
+    else if(k==='Home'){e.preventDefault();go(0)}
+    else if(k==='End'){e.preventDefault();go(N-1)}
+    else if(k==='f'||k==='F'){fs()}});
+  var tx=null,ty=0;
+  addEventListener('touchstart',function(e){tx=e.touches[0].clientX;ty=e.touches[0].clientY},{passive:true});
+  addEventListener('touchend',function(e){if(tx===null)return;var dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+    if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy))go(cur+(dx<0?1:-1));tx=null},{passive:true});
+  addEventListener('hashchange',fromHash);addEventListener('resize',fit);
+  fit();fromHash();
+})();
+</script>
+</body>
+</html>

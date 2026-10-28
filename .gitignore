@@ -1,0 +1,20 @@
+# Keep only design/demo HTML docs tracked for now
+.DS_Store
+ATT56962.gitignore
+Dockerfile
+File Blocked File Alert.htm*
+FinalProject_Demo1Requirements*
+TEMPLATE.md
+github/
+package-lock.json
+package.json
+projecthon-team5-chart/
+qualitygate/
+sonar-project.properties
+tdp-2026-access-guide.md
+node_modules/
+dist/
+build/
+coverage/
+*.log
+.env
