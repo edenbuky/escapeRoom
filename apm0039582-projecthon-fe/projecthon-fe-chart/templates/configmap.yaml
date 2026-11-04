@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Release.Name }}
+  annotations:
+    version: {{ .Values.app.version }}
+data:
+{{ (.Files.Glob "config/*").AsConfig | indent 2 }}
+  env.js: {{ toYaml .Values.envValues | indent 4 }}

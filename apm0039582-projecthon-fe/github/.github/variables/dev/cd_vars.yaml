@@ -1,0 +1,18 @@
+#+--------------------+
+#|    Azure          |
+#+--------------------+
+azure:
+  subscription-id: '8013e038-2f5d-4743-ae0b-fc6e68569fcb'
+  tenant-id: 'e741d71c-c6b6-47b0-803c-0f3b32b07556'
+  aks:
+    resource-group: 'tdp-wst2-dev-app-aks-rg'
+    cluster-name: 'tdp-wst2-dev-app-aks'
+    namespace: 'tdp-2026'
+
+#+--------------------+
+#|    Proxy          |
+#+--------------------+
+proxy:
+  host: 'proxy.conexus.svc.private'
+  port: 3128
+  no-proxy: api.sourceclear.io,api.veracode.com,download.sourceclear.com,sca.analysiscenter.veracode.com,analysiscenter.veracode.com,localhost,127.0.0.1,*.svc.local,*.internal.cloudapp.net,*.windows.net,*.usgov.cloudapi.net,*.microsoftonline.com,*.azure.com,*.azurecr.io,*.azmk8s.io,*.cloudbees.com,*.jenkins-ci.org,*.jenkins.io,*.maven.org,*.oracle.com,*.apache.org,nodejs.org,download.docker.com,*.xmission.com,*.osuosl.org,*.veracode.com

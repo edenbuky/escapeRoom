@@ -1,0 +1,23 @@
+environmentType: dev
+# Shared namespace where the team backend services (projecthon-team1..7) run,
+# so the ingress can route to them.
+namespace: tdp-2026
+
+spec:
+  replicas: 1
+
+ingress_url: projecthon.dev
+
+envValues: |
+  window.__ENV__ = {
+    ENVIRONMENT: 'dev',
+    TEAM_API_BASE_PATHS: {
+      team1: '/api/team1',
+      team2: '/api/team2',
+      team3: '/api/team3',
+      team4: '/api/team4',
+      team5: '/api/team5',
+      team6: '/api/team6',
+      team7: '/api/team7',
+    },
+  };

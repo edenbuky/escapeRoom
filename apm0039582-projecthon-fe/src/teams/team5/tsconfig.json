@@ -1,0 +1,4 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [".", "../../teams.ts", "../TeamLayout.tsx", "../useTeamBackend.ts", "../../api/teamApi.ts"]
+}

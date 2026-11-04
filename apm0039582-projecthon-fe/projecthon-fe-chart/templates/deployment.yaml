@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Release.Name }}
+  annotations:
+    version: {{ .Values.app.version }}
+spec:
+  progressDeadlineSeconds: {{ .Values.spec.progressDeadlineSeconds }}
+  replicas: {{ .Values.spec.replicas }}
+  revisionHistoryLimit: {{ .Values.spec.revisionHistoryLimit }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  strategy:
+    rollingUpdate:
+      maxSurge: {{ .Values.spec.strategy.rollingUpdate.maxSurge }}
+      maxUnavailable: {{ .Values.spec.strategy.rollingUpdate.maxUnavailable }}
+    type: {{ .Values.spec.strategy.type }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+      annotations:
+        version: {{ .Values.app.version }}
+        kubectl.kubernetes.io/default-container: {{ .Release.Name }}
+    spec:
+      imagePullSecrets:
+        - name: {{ .Values.spec.registry }}
+      serviceAccountName: {{ .Values.spec.template.spec.serviceAccountName }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1001
+      volumes:
+      - name: nginx-conf
+        configMap:
+          name: {{ .Release.Name }}
+      - name: nginx-cache
+        emptyDir: {}
+      - name: nginx-run
+        emptyDir: {}
+      containers:
+      - name: {{ .Release.Name }}
+        image: {{ .Values.spec.template.spec.containers.imageName }}
+        imagePullPolicy: {{ .Values.spec.template.spec.containers.imagePullPolicy }}
+        securityContext:
+          readOnlyRootFilesystem: true
+        resources:
+          limits:
+            memory: {{ .Values.spec.template.spec.containers.resources.memory }}
+          requests:
+            cpu: {{ .Values.spec.template.spec.containers.resources.cpu }}
+            memory: {{ .Values.spec.template.spec.containers.resources.memory }}
+        ports:
+        - name: {{ .Values.spec.template.spec.containers.ports.name }}
+          containerPort: {{ .Values.spec.template.spec.containers.ports.containerPort }}
+        env:
+        - name: APP_ENVIRONMENT
+          value: {{ .Values.environmentType }}
+        volumeMounts:
+        - name: nginx-conf
+          mountPath: /etc/nginx/conf.d/default.conf
+          subPath: default.conf
+        - name: nginx-conf
+          mountPath: /usr/share/nginx/html/config/env.js
+          subPath: env.js
+        - name: nginx-cache
+          mountPath: /var/cache/nginx
+        - name: nginx-run
+          mountPath: /var/run
+      restartPolicy: {{ .Values.spec.template.spec.restartPolicy }}

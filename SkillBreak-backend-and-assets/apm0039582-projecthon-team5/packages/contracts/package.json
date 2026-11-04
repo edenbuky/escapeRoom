@@ -1,0 +1,16 @@
+{
+  "name": "@team5/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+    "./server": { "types": "./dist/server/index.d.ts", "default": "./dist/server/index.js" }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "jest --config jest.config.cjs",
+    "typecheck": "tsc -p tsconfig.test.json && tsc -p test/tsconfig.browser.json && tsc -p test/tsconfig.consumers.json"
+  }
+}

@@ -1,20 +1,22 @@
-# Keep only design/demo HTML docs tracked for now
 .DS_Store
 ATT56962.gitignore
-Dockerfile
-File Blocked File Alert.htm*
-FinalProject_Demo1Requirements*
-TEMPLATE.md
-github/
-package-lock.json
-package.json
-projecthon-team5-chart/
-qualitygate/
-sonar-project.properties
-tdp-2026-access-guide.md
 node_modules/
 dist/
 build/
 coverage/
+cypress-e2e-coverage/
+cypress-component-coverage/
 *.log
 .env
+.env.*
+!.env.example
+.npmrc
+.local/
+.kube/
+kubeconfig*
+*.key
+*.crt
+*.secret.yaml
+secrets/
+npm-debug.log*
+*.local

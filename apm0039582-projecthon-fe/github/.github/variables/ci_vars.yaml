@@ -1,0 +1,77 @@
+#+--------------------+
+#|    Build           |
+#+--------------------+
+build:
+  ci-flag: 'false'
+  npm-project-dir: '.'
+  npm-cache-dependency-path: ''
+  npm-remove-package-lock: false
+  npm-dependency: npm ci --legacy-peer-deps
+  npm-script: npm run build
+  npm-script-lint: ''
+  npm-script-test: npm run test
+
+#+--------------------+
+#|    Sonar           |
+#+--------------------+
+sonar:
+  property: sonar-project.properties
+  domain: 'com.att.tdp'
+  name: 'projecthon-fe'
+  properties:
+    sonar-debug: 'true'
+    sonar-exclusions: '**/node_modules/**,coverage/**,dist/**,build/**,mocks,**/*.test.ts,**/*.test.tsx'
+    sonar-inclusions: '**/*.ts,**/*.tsx'
+    sonar-javascript-lcov-reportPaths: 'coverage/lcov.info'
+    sonar-language: ts
+    sonar-qualitygate-wait: 'true'
+    sonar-sources: 'src'
+    sonar-test-inclusions: '**/*test.js,**/*test.ts,**/*test.tsx'
+    sonar-tests: 'src'
+    sonar-verbose: 'true'
+  additional-properties: >
+    -Dsonar.log_level='INFO'
+
+#+--------------------+
+#|    SAST            |
+#+--------------------+
+veracode-sast:
+  language-type: 'node'
+  file-type-for-scan: "./src ./package.json ./package-lock.json"
+  properties:
+    profile-name: '32659-TDP-projecthon-fe'
+    create-sandbox: false
+
+#+--------------------+
+#|    SCA             |
+#+--------------------+
+veracode-sca:
+  workspace-name: 'WS-32659'
+
+#+--------------------+
+#|    Quality Gate    |
+#+--------------------+
+qualitygate:
+  java-full-path: "/usr/bin/java"
+  project-path: "."
+  continues-improvement: 'false'
+
+#+--------------------+
+#|    Tests           |
+#+--------------------+
+tests:
+  cypress:
+    enable: 'false'
+
+#+--------------------+
+#|    Docker          |
+#+--------------------+
+docker:
+  dockerfile: 'Dockerfile'
+  build-path: '.'
+
+#+--------------------+
+#|    Deployment      |
+#+--------------------+
+deployment:
+  workflow-id: 'cd.yaml'

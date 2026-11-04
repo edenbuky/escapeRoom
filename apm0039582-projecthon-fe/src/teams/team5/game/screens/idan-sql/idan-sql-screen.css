@@ -1,0 +1,49 @@
+/* Idan's SQL window: the frame is the design HTML's window-shell (header, back button, subtitle, footer and phone
+   overrides); the body is the DESIGN-v2 SQL view (command box + result grid). Scoped under .window-shell so these
+   rules win over game.css's general button rules in the puzzle panel. Subtitle and footer are right-aligned like the
+   design's but read left to right: they are English here. */
+.window-shell { display: flex; flex-direction: column; width: min(94vw, 1120px); height: min(77svh, 740px); min-height: min(420px, 75svh); border: 1px solid #65b6f4a8; border-radius: 14px; background: #091626; box-shadow: 0 28px 80px #000d; overflow: hidden; direction: ltr; }
+.window-shell .window-header { display: flex; align-items: center; gap: 10px; min-height: 49px; padding: 9px 14px; background: linear-gradient(90deg, #0b3762, #142d49); border-bottom: 1px solid #71baff55; color: #f3f9ff; font-size: clamp(12px, 1.4vw, 16px); font-weight: 750; }
+.window-shell .window-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.window-shell .window-back { display: inline-block; min-height: 0; font-weight: inherit; border: 1px solid #84c7ff99; border-radius: 7px; background: #153f65; color: white; padding: 5px 10px; font-size: 12px; flex-shrink: 0; }
+.window-shell .window-back:hover { background: #24699f; }
+.window-shell .window-subtitle { padding: 6px 14px; font-size: 11px; color: #a3c7e5; background: #0b1c2e; border-bottom: 1px solid #4b789a55; text-align: right; }
+.window-shell .window-body { flex: 1; min-height: 0; padding: 14px; overflow: auto; background: #080e18; }
+.window-shell .window-footer { padding: 7px 14px; background: #0c2037; color: #a9cde9; font-size: 11px; border-top: 1px solid #2a5677; text-align: right; }
+
+.window-shell .t5-sql { display: flex; flex-direction: column; gap: 12px; }
+.window-shell .t5-sql-tables { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; color: #b4c5dd; font-size: 13px; }
+.window-shell .t5-sql-tables code { padding: 2px 8px; border: 1px solid #4b789a88; border-radius: 4px; background: #0b1c2e; color: #d9f2ff; }
+.window-shell .t5-sql-form { display: flex; flex-direction: column; gap: 8px; }
+.window-shell .t5-sql-form label { font-size: 13px; font-weight: 700; color: #a3c7e5; }
+.window-shell .t5-sql-form textarea { width: 100%; min-height: 96px; padding: 10px 12px; border: 1px solid #559de5; border-radius: 6px; background: #091626; color: #d9f2ff; font: 14px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; resize: vertical; }
+.window-shell .t5-sql-form textarea:focus-visible { outline: none; border-color: #b1eaff; box-shadow: 0 0 0 2px #63bfff70; }
+.window-shell .t5-sql-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.window-shell .t5-sql-actions button:disabled { opacity: .55; cursor: not-allowed; }
+.window-shell .t5-sql-sandbox { display: inline-flex; align-items: center; gap: 8px; color: #ffd38a; font-size: 13px; }
+.window-shell .t5-sql-sandbox::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.window-shell .t5-sql-sandbox.ready { color: #6ee7ff; }
+.window-shell .t5-sql-spin { animation: t5-sql-spin 1s linear infinite; }
+@keyframes t5-sql-spin { to { transform: rotate(360deg); } }
+.window-shell .t5-sql-result { display: flex; flex-direction: column; gap: 8px; min-height: 120px; }
+.window-shell .t5-sql-empty { margin: 0; padding: 16px; border: 1px dashed #4b789a88; border-radius: 6px; color: #a3c7e5; text-align: center; }
+.window-shell .t5-sql-message { margin: 0; padding: 10px 12px; border-left: 3px solid #ffd38a; border-radius: 4px; background: #2a2416; color: #ffe7bd; font: 13px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; user-select: text; }
+.window-shell .t5-sql-blocked { border-left-color: #ff8a7a; background: #2e1a18; color: #ffc6bd; }
+.window-shell .t5-sql-grid { overflow: auto; border: 1px solid #4b789a88; border-radius: 6px; background: #091626; }
+.window-shell .t5-sql-grid table { width: 100%; border-collapse: collapse; font: 13px/1.4 ui-monospace, SFMono-Regular, Consolas, monospace; color: #d9f2ff; }
+.window-shell .t5-sql-grid th { position: sticky; top: 0; padding: 8px 10px; background: #142d49; color: #f3f9ff; text-align: left; white-space: nowrap; }
+.window-shell .t5-sql-grid td { padding: 6px 10px; border-top: 1px solid #1e2a36; vertical-align: top; }
+.window-shell .t5-sql-grid tbody tr:nth-child(even) { background: #0d1622; }
+/* Click-to-copy values: the value itself is the copy control (no buttons, as in the design HTML). */
+.window-shell .t5-sql-value { display: inline-block; max-width: 100%; margin: -2px -5px; padding: 2px 5px; border-radius: 4px; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; cursor: copy; }
+.window-shell .t5-sql-value:hover { background: #153f65; }
+.window-shell .t5-sql-value:focus-visible { outline: none; box-shadow: 0 0 0 2px #63bfff70; }
+.window-shell .t5-sql-value[data-copy="copied"]::after { content: 'Copied'; margin-left: 8px; padding: 0 6px; border-radius: 99px; background: #0b3d2e; color: #42fa91; font: 700 10px/1.6 Inter, Arial, sans-serif; }
+.window-shell .t5-sql-null { color: #7d8a90; font-style: italic; font-size: 11px; letter-spacing: .04em; }
+.window-shell .t5-sql-hint { margin: 0; color: #a3c7e5; font-size: 11px; text-align: right; }
+@media (max-width: 700px) {
+  .window-shell { height: min(80svh, 680px); min-height: 0; }
+  .window-shell .window-header { padding: 7px; gap: 5px; }
+  .window-shell .window-back { padding: 4px 6px; font-size: 10px; }
+  .window-shell .window-body { padding: 7px; }
+}

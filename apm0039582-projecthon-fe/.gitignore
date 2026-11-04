@@ -1,0 +1,10 @@
+node_modules
+dist
+coverage
+*.local
+.DS_Store
+.env
+.env.*
+npm-debug.log*
+# may contain registry credentials
+.npmrc

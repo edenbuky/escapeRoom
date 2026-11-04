@@ -1,0 +1,2 @@
+# For an authenticated registry, set NPM_USER_CONFIG to your private npm user config.
+# This public fallback intentionally contains no credentials.

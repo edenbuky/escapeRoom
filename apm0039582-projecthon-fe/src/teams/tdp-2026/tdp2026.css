@@ -1,0 +1,136 @@
+.tdp-page {
+  text-align: center;
+  padding: 1rem 0 2rem;
+}
+
+.tdp-back {
+  display: inline-block;
+  margin-bottom: 1rem;
+  color: #64748b;
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+.tdp-back:hover {
+  color: #0057b8;
+}
+
+.tdp-hero {
+  padding: 2rem 1rem;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #6366f1 0%, #ec4899 50%, #f59e0b 100%);
+  color: #fff;
+  box-shadow: 0 12px 30px rgba(99, 102, 241, 0.35);
+}
+
+.tdp-hero h1 {
+  margin: 0.25rem 0 0;
+  font-size: 2.4rem;
+  letter-spacing: 1px;
+}
+
+.tdp-tagline {
+  margin: 0.25rem 0 0;
+  opacity: 0.9;
+  font-style: italic;
+}
+
+.tdp-face {
+  font-size: 4rem;
+  display: inline-block;
+  animation: float 2.5s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(-12px) rotate(4deg); }
+}
+
+.wobble {
+  animation: wobble 0.5s ease;
+}
+
+@keyframes wobble {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-2deg) scale(1.02); }
+  75% { transform: rotate(2deg) scale(1.02); }
+}
+
+.tdp-btn {
+  margin-top: 1.5rem;
+  padding: 0.75rem 1.75rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  background: #6366f1;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.1s ease, background 0.2s ease;
+}
+.tdp-btn:hover:not(:disabled) {
+  background: #4f46e5;
+  transform: translateY(-2px);
+}
+.tdp-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+}
+.tdp-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.tdp-btn-ghost {
+  background: transparent;
+  color: #6366f1;
+  border: 2px solid #6366f1;
+}
+.tdp-btn-ghost:hover:not(:disabled) {
+  background: #eef2ff;
+}
+
+.tdp-counter {
+  margin-top: 0.75rem;
+  color: #475569;
+}
+
+.tdp-reply {
+  margin: 1rem auto 0;
+  max-width: 460px;
+  padding: 0.75rem 1rem;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 10px;
+  color: #065f46;
+}
+
+.tdp-joke {
+  margin-top: 1.5rem;
+  color: #334155;
+  min-height: 2.5rem;
+}
+
+.tdp-db {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tdp-db-ok {
+  color: #15803d;
+  font-weight: 600;
+}
+
+.tdp-db-meh {
+  color: #92400e;
+}
+
+.tdp-foot {
+  margin-top: 2rem;
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+.tdp-foot code {
+  color: #64748b;
+}

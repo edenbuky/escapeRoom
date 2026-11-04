@@ -1,0 +1,73 @@
+## The Service name as will be used by the pipeline
+name: 'projecthon-fe'
+
+mots-id: '32659'
+project-acronym: 'TDP'
+technology: 'node'
+
+## CI flow type
+##    'Default' | 'Docker' | 'Helm' | 'Package'
+flow-type: 'Helm'
+
+# Semantic versioning prefix (Patch is appended by the pipeline)
+version: '1.0.'
+
+#+--------------------+
+#|    Tools           |
+#+--------------------+
+tools:
+  node:
+    version: '20.x'
+    command: 'npm'
+    cache: 'npm'
+  java: # Do not remove. required for VeraCode Job
+    version: '21'
+    distribution: temurin
+  helm:
+    version: 'v3.12.1'
+
+#+--------------------+
+#|    Sonar           |
+#+--------------------+
+sonar:
+  server: 'https://sonarqube.us'
+
+#+--------------------+
+#|    JFrog           |
+#+--------------------+
+artifacts-server: 'https://artifact.it.att.com'
+
+#+--------------------+
+#|    NPM             |
+#+--------------------+
+npm:
+  repository: 'artifactory/api/npm/apm0039582-npm-group'
+  repository-path: 'com/att/tdp/projecthon-fe'
+
+#+--------------------+
+#|    Docker          |
+#+--------------------+
+docker:
+  repository: 'apm0039582-dkr-group'
+  repository-path: 'com/att/tdp/projecthon-fe'
+  image-name: 'projecthon-fe'
+
+#+--------------------+
+#|    Helm            |
+#+--------------------+
+helm:
+  repository: 'apm0039582-hlm-group'
+  repository-path: 'com/att/tdp/projecthon-fe'
+  spec-image: 'spec.template.spec.containers.imageName'
+  chart-name: 'projecthon-fe'
+  chart-path: 'projecthon-fe-chart'
+  timeout: '5m'
+  pre-script: ''
+
+#+--------------------+
+#|    Proxy           |
+#+--------------------+
+proxy:
+  host: 'proxy.conexus.svc.local'
+  port: '3128'
+  no-proxy: 'localhost,127.0.0.1'

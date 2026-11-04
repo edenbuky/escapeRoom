@@ -1,0 +1,8 @@
+**
+!Dockerfile
+!package.json
+!package-lock.json
+!entrypoint.sh
+!query-helper.mjs
+!fixtures/
+!fixtures/room1-sql-v1.sql

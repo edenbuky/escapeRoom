@@ -1,0 +1,10 @@
+{
+  "name": "@team5/local-runtime",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "jest --config jest.config.cjs",
+    "typecheck": "tsc -p tsconfig.test.json"
+  }
+}

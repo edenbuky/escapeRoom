@@ -1,0 +1,60 @@
+.t5-auth-panel {
+  display: grid;
+  gap: 1rem;
+  width: min(100% - 2rem, 28rem);
+  margin: 2rem auto;
+  padding: 1.5rem;
+  border: 1px solid #d5d9dc;
+  border-radius: 4px;
+  background: #fff;
+  color: #202a30;
+}
+
+.t5-auth-panel h2,
+.t5-auth-panel p {
+  margin: 0;
+}
+
+.t5-auth-panel form {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.t5-auth-panel input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #70787d;
+  border-radius: 3px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+}
+
+.t5-auth-panel button {
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #176a9b;
+  border-radius: 3px;
+  background: #176a9b;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.t5-auth-panel button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.t5-auth-panel .t5-auth-switch {
+  border-color: transparent;
+  background: transparent;
+  color: #135f8b;
+  text-decoration: underline;
+}
+
+.t5-auth-panel .t5-auth-error {
+  color: #a32222;
+}

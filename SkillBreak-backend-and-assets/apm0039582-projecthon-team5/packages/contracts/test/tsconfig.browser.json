@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "rootDir": ".",
+    "types": [],
+    "skipLibCheck": false,
+    "noEmit": true
+  },
+  "include": ["exports.type-test.ts"]
+}

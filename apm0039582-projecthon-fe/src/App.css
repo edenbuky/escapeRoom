@@ -1,0 +1,95 @@
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  color: #1a1a1a;
+  background: #f5f6f8;
+}
+
+.app {
+  margin: 4rem auto;
+  padding: 0 1.5rem;
+}
+
+.app--team7 {
+  max-width: 1200px;
+}
+
+.app h1 {
+  margin-bottom: 0.25rem;
+}
+
+.team-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.team-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: #fff;
+  border: 1px solid #e2e4e8;
+  border-radius: 8px;
+}
+
+.team-list a {
+  font-weight: 600;
+  color: #0057b8;
+  text-decoration: none;
+}
+
+.team-list code {
+  color: #6b7280;
+}
+
+.back {
+  display: inline-block;
+  margin-bottom: 1rem;
+  color: #0057b8;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.meta {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.4rem 1rem;
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid #e2e4e8;
+  border-radius: 8px;
+}
+
+.meta dt {
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.meta dd {
+  margin: 0;
+}
+
+.hint {
+  color: #6b7280;
+  font-style: italic;
+}
+
+.status-ok {
+  color: #15803d;
+  font-weight: 600;
+}
+
+.status-error {
+  color: #b91c1c;
+}
+
+.response {
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid #e2e4e8;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 0.85rem;
+}

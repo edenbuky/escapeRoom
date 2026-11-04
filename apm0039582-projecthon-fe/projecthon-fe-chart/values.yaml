@@ -1,0 +1,77 @@
+motsId: 32659
+
+app:
+  version: 0.0.1
+
+spec:
+  registry: jfrog-registry
+  progressDeadlineSeconds: 120
+  replicas: 1
+  revisionHistoryLimit: 5
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    spec:
+      serviceAccountName: default
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      containers:
+        imageName:
+        imagePullPolicy: Always
+        ports:
+          containerPort: 8080
+          name: http
+        resources:
+          cpu: 100m
+          memory: 256Mi
+
+service:
+  port: 80
+  targetPort: 8080
+
+# Runtime browser config injected as /config/env.js (overridden per env).
+envValues: |
+  window.__ENV__ = {};
+
+hpa:
+  enabled: false
+  maxReplicas: 2
+  minReplicas: 1
+  cpuTargetAverageUtilization: 85
+  memoryTargetAverageUtilization: 85
+
+ingress:
+  # Path prefix routed to this frontend (serves /team1../team7 SPA pages too).
+  fePath: '/'
+  # Backends are mounted under /api/<path> so they don't collide with the SPA routes.
+  # rewrite strips the /api/<path> prefix before forwarding.
+  apiPrefix: api
+  teamServices:
+    - path: team1
+      service: projecthon-team1
+      port: 80
+    - path: team2
+      service: projecthon-team2
+      port: 80
+    - path: team3
+      service: projecthon-team3
+      port: 80
+    - path: team4
+      service: projecthon-team4
+      port: 80
+    - path: team5
+      service: projecthon-team5
+      port: 80
+    - path: team6
+      service: projecthon-team6
+      port: 80
+    - path: team7
+      service: projecthon-team7
+      port: 80
+    # reference service used to validate the full chain end to end
+    - path: tdp-2026
+      service: tdp-2026
+      port: 80

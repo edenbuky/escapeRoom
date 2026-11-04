@@ -1,0 +1,113 @@
+###############################
+##    RevUp Shared Variables  ##
+##  (used by both CI and CD)  ##
+###############################
+
+## The Service name as will be used by the pipeline
+## For example: JFrog url and artifact name. Dora report, etc.
+## In case of MonoRepo project, please comment it
+name: 'projecthon-team5'
+
+mots-id: '32659'
+project-acronym: 'TDP'
+technology: 'node'
+
+## Define the required CI flow of the project
+##    'Default' - Follows the Helm flow
+##    'Docker' - Build and Upload Docker image to Jfrog
+##    'Helm' - Build and Upload Docker image & Helm package to Jfrog
+##    'Package' - Build and Upload Package to Jfrog
+##    'OsNativePackage' - Build and Upload OS-native packages (deb/rpm); requires os-package-type below
+
+##    The following flow types are Skipping the CD phase:
+##    'Library' - Build and Upload Build Artifact to Jfrog
+##    'ScanOnly' - Build and Scans only, no artifact will be uploaded to Jfrog
+flow-type: 'Helm'
+
+# Semantic versioning prefix
+# Define the Major and Minor version of the project
+# The Patch value is automatically concat by the pipeline with the 'build name'
+# Keep the version format as 'X.Y.'
+# e.g. the first run for 1.0. will be set to 1.0.01
+version: '1.0.'
+
+#+--------------------+
+#|    Tools           |-------------------------------------------------------------------------------------------------
+#+--------------------+
+tools:
+  node:
+    ## Node version
+    version: '20'
+    ## Available commands:  npm | yarn | pnpm
+    command: 'npm'
+    ## Caching method: npm | yarn
+    cache: 'npm'
+
+  java: # Do not remove. require for VeraCode Job
+    version: '21'
+    distribution: temurin
+
+  cypress:
+    version: '13.15.1'
+
+  helm:
+    version: 'v3.12.1'
+
+#+--------------------+
+#|    Sonar           |------------------------------------------------------------------------------------------------
+#+--------------------+
+sonar:
+  server: 'https://sonarqube.us'
+
+#+--------------------+
+#|    JFrog           |------------------------------------------------------------------------------------------------
+#+--------------------+
+artifacts-server: 'https://artifact.it.att.com'
+
+#+--------------------+
+#|    NPM             |------------------------------------------------------------------------------------------------
+#+--------------------+
+npm:
+  ## Repository - refers to the storage name within the JFrog that holds software artifacts
+  ## Note: replace only the placeholder 'apm*****' with the project itap id
+  ## without any trailing slash (/)
+  repository: 'artifactory/api/npm/apm0039582-npm-group'
+
+  ## Repository Path - Refers to the "location" of an artifact within the repository,
+  ## e.g. 'com/example/my-app'
+  repository-path: 'com/att/tdp/projecthon-team5'
+
+#+--------------------+
+#|    Docker          |------------------------------------------------------------------------------------------------
+#+--------------------+
+docker:
+  repository: 'apm0039582-dkr-group'
+  repository-path: 'com/att/tdp/projecthon-team5'
+
+  # Docker image name.
+  # In case of MonoRepo project - comment it out
+  image-name: 'projecthon-team5'
+
+#+--------------------+
+#|    Helm            |------------------------------------------------------------------------------------------------
+#+--------------------+
+helm:
+  repository: 'apm0039582-hlm-group'
+  repository-path: 'com/att/tdp/projecthon-team5'
+
+  # Spec image: The path to the image definition in the Helm chart's values.yaml file.
+  spec-image: 'image.repository'
+
+  # Chart name/path: comment out for MonoRepo projects
+  chart-name: 'projecthon-team5'
+  chart-path: 'projecthon-team5-chart'
+  timeout: '5m'
+  pre-script: ''
+
+#+--------------------+
+#|    Proxy           |-------------------------------------------------------------------------------------------------
+#+--------------------+
+proxy:
+  host: 'proxy.conexus.svc.local'
+  port: '3128'
+  no-proxy: 'localhost,127.0.0.1'

@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  generateName: skillbreak-runtime-smoke-
+  namespace: skillbreak-foundation
+  labels:
+    app.kubernetes.io/name: skillbreak-runtime-smoke
+spec:
+  runtimeClassName: runc
+  restartPolicy: Never
+  activeDeadlineSeconds: 120
+  automountServiceAccountToken: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: smoke
+      image: busybox:1.37.0
+      command: ["sh", "-c", "printf 'runtime ready\\n'"]
+      resources:
+        requests:
+          cpu: 10m
+          memory: 8Mi
+        limits:
+          cpu: 100m
+          memory: 32Mi
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: ["ALL"]
