@@ -1,0 +1,160 @@
+.team5-game .t5-brand-logo { width: 230px; max-width: 42vw; height: 64px; object-fit: contain; }
+.team5-game .t5-door-hotspot { position: absolute; border: 0; background: transparent; cursor: pointer; }
+.team5-game .t5-door-hotspot:focus-visible { outline: 3px solid #00bfb3; outline-offset: -3px; }
+.app:has(.team5-game) { min-height: calc(100vh + 16px); margin: -8px; padding: 0; background: #10191d; }
+.page:has(.team5-game) { min-height: 100vh; margin: 0; padding: 24px; background: #10191d; }
+.page:has(.team5-game) > :is(h1, .meta, .response) { display: none; }
+.page:has(.team5-game) > .back { color: #b6edff; }
+body:has(.team5-game .t5-auth-scene) { margin: 0; }
+.app:has(.team5-game .t5-auth-scene) { min-height: 100dvh; margin: 0; background: transparent; }
+.page:has(.team5-game .t5-auth-scene) { position: relative; min-height: 100dvh; padding: 0; background: #10191d; }
+.page:has(.team5-game .t5-auth-scene) > .back { position: absolute; top: 16px; left: 20px; z-index: 2; margin: 0; padding: 8px 0; color: #fff; text-shadow: 0 1px 4px #000; }
+/* The room page and the puzzle window are ported from the design HTML (design-code.html L9-75).
+   Every design class is scoped under .team5-game: all team stylesheets load on every page (App.css has its own .hint). */
+.team5-game { --t5-accent: #42b6ff; --t5-entry-accent: #13d5ed; position: relative; isolation: isolate; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; gap: 13px; color: #f6f9ff; font-family: Inter, 'Segoe UI', Arial, sans-serif; }
+.team5-game > .t5-background-video { position: fixed; z-index: -1; inset: 0; width: 100vw; height: 100dvh; object-fit: cover; pointer-events: none; filter: blur(5px); transform: scale(1.04); }
+/* Rows span the header width like the design topbar; the stage sizes itself and the window covers the viewport. */
+.team5-game > :not(.stage-frame, .modal, .t5-background-video) { width: min(100%, 1400px); }
+.team5-game * { box-sizing: border-box; letter-spacing: 0; }
+/* :where() keeps this base at element weight, so any class rule (the design's buttons, the screens' own) wins over it. */
+:where(.team5-game) button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 9px 16px; border: 1px solid #84c7ff99; border-radius: 10px; background: #12253ee6; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.team5-game button:disabled { opacity: .6; cursor: not-allowed; }
+/* The design's window close and back buttons keep the browser's own focus ring. */
+.team5-game button:not(:where(.modal-close, .window-back)):focus-visible, .team5-game input:focus-visible { outline: 3px solid #a9eaff; outline-offset: 2px; }
+.team5-game .t5-primary { background: var(--t5-accent); border-color: var(--t5-accent); color: #04192b; font-weight: 700; }
+.team5-game .t5-icon { width: 40px; height: 40px; flex: 0 0 40px; min-height: 0; padding: 0; border-color: #90caff99; border-radius: 50%; background: #12253ee6; }
+.team5-game .t5-text-button { background: transparent; border-color: transparent; padding-left: 0; color: #b4c5dd; }
+.team5-game .topbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px 20px; }
+.team5-game .brand { display: flex; align-items: center; gap: 12px; min-width: 0; margin-right: auto; }
+.team5-game .brand-mark { width: 40px; height: 40px; flex: 0 0 auto; display: grid; place-items: center; border: 1px solid #3f86bd8c; border-radius: 13px; background: linear-gradient(145deg, #285b92, #0a1731); box-shadow: inset 0 0 16px #6bcaff2b, 0 6px 22px #0005; font-size: 22px; font-weight: 800; }
+.team5-game .eyebrow { color: #79c8ff; letter-spacing: .17em; text-transform: uppercase; font-size: 10px; font-weight: 800; margin: 0 0 3px; }
+.team5-game .brand h2 { font-size: clamp(17px, 2.5vw, 24px); line-height: 1.13; margin: 0; letter-spacing: -.025em; white-space: nowrap; }
+.team5-game .t5-room-toolbar { display: contents; }
+.team5-game .room-count { display: flex; flex-direction: row-reverse; align-items: center; gap: 12px; color: #d9e9ff; font-size: 12px; border: 1px solid #82c5f033; background: #0b1930bc; padding: 9px 14px; border-radius: 99px; }
+.team5-game .room-dots { display: flex; gap: 5px; }
+.team5-game .dot { width: 24px; height: 5px; border-radius: 20px; background: #53667c; transition: background .25s; }
+.team5-game .dot.active { background: #43c4ff; box-shadow: 0 0 12px #43c4ff8b; }
+.t5-clock { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border: 1px solid #82c5f033; border-radius: 99px; background: #0b1930bc; color: #d9e9ff; font-size: 13px; font-variant-numeric: tabular-nums; }
+.t5-clock > svg { color: #79c8ff; }
+.t5-clock > span:first-of-type { min-width: 5ch; font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace; }
+.t5-time-up { color: #ffc6bd; border-color: #ff8a7a66; }
+.t5-account { display: flex; flex-direction: row; align-items: center; gap: 10px; min-width: 0; }
+.t5-account-name { order: 0; overflow-wrap: anywhere; max-width: 180px; font-size: 13px; color: #b4c5dd; }
+.team5-game .topbar--anonymous { position: absolute; z-index: 20; top: 0; left: 50%; transform: translateX(-50%); }
+.team5-game .t5-account { margin-left: auto; }
+.team5-game .t5-sound-toggle { color: #d8f8fb; }
+.team5-game .t5-account--anonymous { justify-content: flex-end; }
+.t5-entry-scene { min-height: 640px; position: relative; display: grid; grid-template-columns: minmax(0, 1fr); align-content: center; justify-items: center; gap: clamp(18px, 3vh, 36px); padding: 48px; isolation: isolate; overflow: hidden; background: transparent; }
+.t5-entry-scene > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: center; z-index: -2; }
+.t5-entry-scene > .t5-entry-logo { position: relative; inset: auto; z-index: 1; display: block; width: min(72vw, 760px); max-height: 28vh; height: auto; object-fit: contain; }
+.t5-entry-scene > :is(.t5-auth-panel, .t5-start, .t5-panel-state) { position: relative; z-index: 1; }
+.team5-game > .t5-auth-scene { width: 100%; min-height: 100dvh; grid-template-rows: auto auto; gap: 16px; padding: 64px 24px 32px; background: transparent; }
+.team5-game > .t5-start-scene { gap: clamp(12px, 2vh, 24px); background: transparent; }
+.team5-game:has(> .t5-auth-scene) > .topbar:empty { display: none; }
+.t5-auth-scene > .t5-entry-logo { width: min(100%, 520px); max-height: 18svh; }
+.t5-start-scene > .t5-entry-logo { width: min(72vw, 760px); max-height: 24svh; }
+.t5-entry-scene::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgba(5,12,15,.42), rgba(5,12,15,.18) 42%, rgba(5,12,15,.28) 72%, rgba(5,12,15,.54)); }
+.t5-entry-scene::before, .t5-entry-scene::after { display: none; }
+.team5-game .t5-auth-panel, .t5-start { width: min(100%, 520px); min-width: 0; margin: 0; padding: 38px; border: 1px solid #5aeaff7a; border-radius: 8px; background: linear-gradient(145deg, rgba(12,25,30,.93), rgba(7,16,20,.88)); box-shadow: 0 24px 70px #0009, inset 0 1px #ffffff18; backdrop-filter: blur(14px); }
+.team5-game .t5-auth-panel { gap: 12px; color: #f4fbfc; }
+.team5-game .t5-auth-scene .t5-auth-panel { padding: 24px; }
+.team5-game .t5-auth-panel h2 { margin: 0; font-size: 34px; line-height: 1.12; text-align: center; }
+.team5-game .t5-auth-panel .t5-auth-intro { color: #c4d2d6; font-size: 14px; line-height: 1.5; text-align: center; }
+.team5-game .t5-auth-panel form { gap: 9px; }
+.team5-game .t5-auth-panel label { display: grid; gap: 7px; margin: 8px 0 0; color: #dce8ea; font-size: 13px; font-weight: 700; }
+.team5-game .t5-auth-panel input { min-height: 48px; padding: 11px 13px; border: 1px solid #7f969c; border-radius: 4px; background: #102127cc; color: #f5fcfd; font-size: 16px; }
+.team5-game .t5-auth-panel input::placeholder { color: #9cabb0; }
+.team5-game .t5-auth-panel button[type='submit'], .team5-game .t5-start .t5-primary { width: 100%; min-height: 54px; margin-top: 10px; border-color: var(--t5-entry-accent); border-radius: 4px; background: var(--t5-entry-accent); color: #071519; font-size: 16px; font-weight: 800; box-shadow: 0 8px 26px #00d6ee38; transition: background .18s ease, box-shadow .18s ease, transform .18s ease; }
+.team5-game .t5-auth-panel button[type='submit']:hover, .team5-game .t5-start .t5-primary:hover { background: #58e8f7; box-shadow: 0 10px 34px #00d6ee52; transform: translateY(-1px); }
+.team5-game .t5-auth-panel .t5-auth-switch { min-height: 38px; justify-self: center; padding: 4px 8px; border: 0; color: #70e9fb; font-weight: 700; text-decoration: none; }
+.team5-game .t5-auth-panel .t5-auth-switch:hover { color: #c1f7ff; text-decoration: underline; }
+.team5-game .t5-auth-panel .t5-auth-error { color: #ffb9ab; }
+.t5-start { max-width: 600px; text-align: center; }
+.t5-start-mark { display: grid; place-items: center; width: 64px; height: 64px; margin: 0 auto 22px; border: 1px solid #5aeaff8a; border-radius: 8px; color: var(--t5-entry-accent); background: #09262d99; box-shadow: 0 0 30px #13d5ed20; }
+.team5-game .t5-start > .eyebrow { color: #78eaff; }
+.t5-start h3 { margin: 14px 0 12px; font-size: 36px; line-height: 1.12; }
+.t5-start p { max-width: 410px; margin: 0 auto; color: #cad7db; font-size: 16px; line-height: 1.6; }
+.t5-start-topics { display: flex; justify-content: center; gap: 10px; margin: 22px 0 16px; }
+.t5-start-topics span { min-width: 66px; padding: 7px 12px; border: 1px solid #59e4f477; border-radius: 4px; color: #b7f5fc; background: #071b20b8; font-size: 12px; font-weight: 800; }
+.team5-game .t5-start .t5-primary { min-height: 58px; font-size: 17px; }
+.t5-error { color: #ffc6bd; font-size: 13px; line-height: 1.5; }
+.t5-banner { margin: 0; padding: 14px 18px; background: #122235bd; }
+.team5-game .t5-connection-notice { padding: 12px 16px; border-left: 3px solid #e8c862; background: #242820; color: #fff3bd; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.team5-game .stage-frame { position: relative; width: min(100%, 1400px, calc((100svh - 132px) * 4 / 3)); aspect-ratio: 4 / 3; flex: none; border: 1px solid #bad9f73b; border-radius: 18px; overflow: hidden; background: #152131; box-shadow: 0 25px 85px #0009, 0 0 0 4px #ffffff07; isolation: isolate; }
+.team5-game .stage-frame::before { content: ''; pointer-events: none; position: absolute; z-index: 7; inset: 0; background: linear-gradient(180deg, #0713234d, transparent 18%, transparent 80%, #07132383); }
+.team5-game .stage { position: absolute; inset: 0; overflow: hidden; }
+.team5-game .room-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; pointer-events: none; user-select: none; }
+.team5-game .room-bg-open { opacity: 0; transition: opacity .65s ease-in-out; }
+.team5-game .room-bg-open.is-visible { opacity: 1; }
+.team5-game .scene-object { position: absolute; display: block; min-height: 0; border: 0; border-radius: 0; padding: 0; margin: 0; background: transparent; z-index: 2; isolation: isolate; transition: filter .18s, transform .18s; cursor: zoom-in; -webkit-tap-highlight-color: transparent; }
+.team5-game .scene-object img { position: relative; width: 100%; height: auto; display: block; pointer-events: none; user-select: none; -webkit-user-drag: none; }
+.team5-game .scene-object .desktop-open-file { position: absolute; top: 41%; left: 22%; width: 12%; height: auto; }
+.team5-game .scene-decoration { position: absolute; z-index: 3; display: block; object-fit: fill; pointer-events: none; user-select: none; -webkit-user-drag: none; }
+.team5-game .scene-object[data-surface='desk']::before { content: ''; position: absolute; z-index: -1; left: 12%; bottom: 1%; width: 76%; height: 10%; border-radius: 50%; background: #08090ca6; filter: blur(8px); transform: skewX(-16deg); pointer-events: none; }
+.team5-game .scene-object:hover, .team5-game .scene-object:focus-visible { filter: drop-shadow(0 0 11px #63c9ffb0) brightness(1.06); transform: translateY(-1.5%); }
+.team5-game .scene-object:focus-visible { outline: 3px solid #a9eaff; outline-offset: 2px; }
+.team5-game .scene-object::after { content: attr(data-label); position: absolute; bottom: 1%; left: 50%; translate: -50% 0; color: white; font-size: clamp(8px, 1vw, 13px); font-weight: 700; white-space: nowrap; text-shadow: 0 2px 6px #000; background: #091c35d9; border: 1px solid #4ebaff99; padding: 5px 9px; border-radius: 30px; pointer-events: none; opacity: 0; transition: opacity .2s; }
+.team5-game .scene-object:hover::after, .team5-game .scene-object:focus-visible::after { opacity: 1; }
+/* Our door is not a control: the room opens from Dana's desktop and the move comes from the session view. */
+.team5-game .room-tag { position: absolute; z-index: 8; top: 2.5%; left: 2.5%; background: #081d36bd; border: 1px solid #a0dfff77; color: #d7f3ff; font-size: clamp(9px, 1vw, 12px); border-radius: 99px; padding: 6px 11px; letter-spacing: .12em; font-weight: 800; pointer-events: none; }
+/* Room 2 (design HTML L30-37, L49-53, L64, L68-75): the task board fills its box; the door is the only control on the exit wall. */
+.team5-game .scene-object[data-item='board'] img { height: 100%; object-fit: fill; }
+.team5-game .door { position: absolute; z-index: 3; min-height: 0; border: 1px solid transparent; padding: 0; background: transparent; border-radius: 10px; color: white; direction: ltr; transition: background .2s, border-color .2s; cursor: pointer; }
+.team5-game .door:hover, .team5-game .door:focus-visible { background: #64d2ff15; border-color: #c9edff9e; }
+.team5-game .door:focus-visible { outline: 3px solid #a9eaff; outline-offset: 2px; }
+.team5-game .door-pill { position: absolute; bottom: 20%; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 99px; background: #092543da; border: 1px solid #7fd7ffad; box-shadow: 0 8px 25px #0007; font-size: clamp(9px, 1.1vw, 14px); white-space: nowrap; font-weight: 700; opacity: .92; }
+.team5-game .door:hover .door-pill { background: #1267a4ed; }
+.team5-game .modal-image { display: block; max-width: 100%; max-height: min(76svh, 850px); object-fit: contain; filter: drop-shadow(0 22px 45px #000c); user-select: none; -webkit-user-drag: none; }
+.team5-game .desktop-scene { position: relative; width: min(92vw, 1050px, calc(71svh * 1.5)); direction: ltr; filter: drop-shadow(0 20px 36px #000a); }
+.team5-game .desktop-screen { display: block; width: 100%; height: auto; user-select: none; -webkit-user-drag: none; }
+.team5-game .desktop-file { position: absolute; top: 43%; width: 14%; height: 25%; min-height: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2%; border: 1px solid transparent; border-radius: 9px; background: transparent; color: #e6f4ff; font: inherit; text-shadow: 0 2px 6px #000; padding: 1%; }
+.team5-game .desktop-file.git-file { left: 41%; }
+.team5-game .desktop-file.pcap-file { left: 63%; }
+.team5-game .desktop-file img { display: block; width: 72%; height: 62%; object-fit: contain; border-radius: 7px; }
+.team5-game .desktop-file span { width: 130%; max-width: 160px; font-size: clamp(8px, 1.05vw, 13px); line-height: 1.14; overflow-wrap: anywhere; text-align: center; direction: ltr; }
+.team5-game .desktop-file:hover, .team5-game .desktop-file:focus-visible { background: #3d9cff38; border-color: #a5d7ffbd; outline: 0; }
+.team5-game .hint { margin: 1em 0; text-align: center; color: #d2e2f4bb; font-size: clamp(11px, 1.2vw, 13px); font-style: normal; line-height: 1.6; }
+.team5-game .hint kbd { font-family: inherit; border-radius: 5px; background: #203448; border: 1px solid #536d88; padding: 2px 5px; }
+.t5-room-status { display: flex; align-items: center; justify-content: center; gap: 8px 12px; flex-wrap: wrap; padding: 0 18px; font-size: 12px; color: #b4c5dd; }
+.t5-status-dot { width: 7px; height: 7px; border-radius: 50%; background: #e8c862; }
+.t5-status-dot.ready { background: #43c4ff; box-shadow: 0 0 8px #43c4ff8b; }
+.t5-inventory { padding: 4px 10px; border: 1px solid #4ebaff99; border-radius: 99px; color: #d7f3ff; background: #091c35d9; }
+.t5-connection { padding: 0 12px; border-inline: 1px solid #82c5f033; }
+.t5-leave-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; padding: 0 0 4px; color: #b4c5dd; font-size: 13px; }
+.t5-session-state { min-height: 360px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 30px; text-align: center; }
+.team5-game .modal { position: fixed; z-index: 100; inset: 0; background: #020710d9; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center; padding: 24px; animation: t5-fade-in .17s ease-out; }
+.team5-game .modal-content { position: relative; width: min(92vw, 1050px); max-height: calc(100svh - 72px); display: flex; flex-direction: column; align-items: center; gap: 11px; outline: none; }
+.team5-game .modal-title { color: #f3f9ff; background: #142b45ee; border: 1px solid #78caff63; border-radius: 99px; padding: 8px 17px; font-weight: 750; font-size: clamp(14px, 2vw, 19px); box-shadow: 0 9px 40px #0008; }
+.team5-game .modal-note { text-align: center; font-size: 13px; color: #d6e8fb; padding: 7px 13px; border-radius: 99px; background: #122235bd; }
+.team5-game .modal-close { position: fixed; right: clamp(12px, 3vw, 32px); top: clamp(12px, 3vw, 32px); z-index: 102; width: 44px; height: 44px; min-height: 0; padding: 0; border-radius: 50%; border: 1px solid #90caff99; color: white; background: #12253ee6; font-size: 25px; font-weight: 400; line-height: 1; }
+.team5-game .modal-close:hover { background: #1b5484; }
+.team5-game .t5-panel-state { width: min(92vw, 420px); min-height: 200px; margin: 0; display: flex; flex-direction: column; gap: 12px; align-items: center; justify-content: center; padding: 28px; border: 1px solid #65b6f4a8; border-radius: 14px; background: #091626; box-shadow: 0 28px 80px #000d; color: #d6e8fb; font-weight: 700; }
+.team5-game .t5-panel-state p { margin: 0; color: #b4c5dd; }
+@keyframes t5-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.t5-spin { animation: t5-spin 1s linear infinite; }
+@keyframes t5-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .t5-spin { animation: none; }
+  .team5-game *, .team5-game *::before, .team5-game *::after { transition: none !important; animation: none !important; }
+}
+@media (max-width: 700px) {
+  .team5-game .brand-mark { width: 34px; height: 34px; border-radius: 10px; font-size: 17px; }
+  .team5-game { gap: 9px; }
+  .team5-game .topbar { gap: 7px; }
+  .team5-game .room-count { font-size: 10px; padding: 7px; gap: 5px; }
+  .team5-game .dot { width: 14px; }
+  .team5-game .stage-frame { width: 100%; border-radius: 11px; }
+  .team5-game .room-tag { padding: 3px 7px; }
+  .team5-game .door-pill { padding: 4px 7px; bottom: 22%; }
+  .team5-game .modal { padding: 10px; }
+  .team5-game .modal-note { font-size: 11px; }
+  .team5-game .brand h2 { white-space: normal; }
+}
+@media (max-width: 600px) {
+  .t5-entry-scene { padding: 24px 16px; min-height: 590px; }
+  .team5-game .t5-auth-panel, .t5-start { padding: 26px 22px; }
+  .team5-game .t5-auth-panel h2 { font-size: 30px; }
+  .t5-start h3 { font-size: 30px; }
+  .t5-start-mark { width: 56px; height: 56px; margin-bottom: 18px; }
+  .t5-room-status { padding: 8px 12px 0; font-size: 11px; }
+}

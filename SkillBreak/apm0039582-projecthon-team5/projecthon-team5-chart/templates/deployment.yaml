@@ -1,0 +1,159 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: projecthon-team5
+  labels:
+    app.kubernetes.io/name: projecthon-team5
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  {{- if .Values.fullStack.enabled }}
+  strategy:
+    type: Recreate
+  {{- end }}
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: projecthon-team5
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      {{- if .Values.fullStack.enabled }}
+      annotations:
+        checksum/runtime: {{ toJson .Values.fullStack.config | sha256sum }}
+      {{- else }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- end }}
+      labels:
+        app.kubernetes.io/name: projecthon-team5
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      serviceAccountName: projecthon-team5
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecret }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.secrets.enabled }}
+      volumes:
+        - name: secrets-store-inline
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: projecthon-team5-spc
+      {{- end }}
+      {{- if .Values.fullStack.enabled }}
+      terminationGracePeriodSeconds: 60
+      initContainers:
+        - name: migrate
+          image: "{{ .Values.image.repository }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["sh", "-ec"]
+          args:
+            - |
+              node scripts/migrate-shared.js
+              {{- if .Values.fullStack.seedCatalog }}
+              node apps/game-engine/dist/modules/script-catalog/seed.js
+              node apps/game-engine/dist/modules/script-catalog/publish-sql-room1.js --embedded
+              node apps/game-engine/dist/modules/script-catalog/publish-gameplay.js
+              node apps/game-engine/dist/modules/script-catalog/publish-room2.js
+              {{- end }}
+          envFrom:
+            - configMapRef:
+                name: projecthon-team5-runtime
+          env:
+            {{- with .Values.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+            {{- range .Values.secrets.envSecretObjects }}
+            - name: {{ .envKey }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .k8sSecretName }}
+                  key: {{ .envKey }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.secrets.enabled }}
+          volumeMounts:
+            - name: secrets-store-inline
+              mountPath: /mnt/secrets-store
+              readOnly: true
+          {{- end }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.fullStack.enabled }}
+          command: ["node", "scripts/start-deployed.js"]
+          envFrom:
+            - configMapRef:
+                name: projecthon-team5-runtime
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+            {{- if .Values.fullStack.enabled }}
+            - name: engine
+              containerPort: 3001
+            {{- end }}
+          env:
+            {{- with .Values.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+            {{- range .Values.secrets.envSecretObjects }}
+            - name: {{ .envKey }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .k8sSecretName }}
+                  key: {{ .envKey }}
+                  optional: {{ and (not $.Values.fullStack.enabled) (ne .k8sSecretName "projecthon-team5-runtime") }}
+            {{- end }}
+          {{- if .Values.fullStack.enabled }}
+          startupProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: ["node", "scripts/check-deployed-ready.js"]
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
+            failureThreshold: 3
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.secrets.enabled }}
+          volumeMounts:
+            - name: secrets-store-inline
+              mountPath: /mnt/secrets-store
+              readOnly: true
+          {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

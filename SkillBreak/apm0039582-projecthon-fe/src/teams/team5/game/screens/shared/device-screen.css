@@ -1,0 +1,26 @@
+/* "Inputs on a picture", ported from the design HTML (design-code.html L76-97); the width stays 100% of our panel.
+   Scoped under .interactive-screen so they win over game.css's general button and input rules in the puzzle panel. */
+.interactive-screen { position: relative; width: min(92vw, 950px, calc(74svh * 1.5)); direction: ltr; filter: drop-shadow(0 22px 40px #000a); }
+.interactive-screen > img { display: block; width: 100%; height: auto; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+.interactive-screen .screen-input { position: absolute; z-index: 2; margin: 0; padding: 1px 8px; min-width: 0; color: #e4f5ff; background: #102a40; border: 1px solid #559de5; border-radius: 4px; font: clamp(10px, 1.38vw, 19px)/1.2 ui-monospace, Consolas, monospace; outline: none; direction: ltr; }
+.interactive-screen .screen-input:focus, .interactive-screen .screen-input:focus-visible { border-color: #b1eaff; box-shadow: 0 0 0 2px #63bfff70; outline: none; }
+.interactive-screen .screen-input.login-input { background: #ecf3ff; border: 1px solid #b1cfff; color: #09274d; font-family: Inter, Arial, sans-serif; font-size: clamp(11px, 1.45vw, 19px); }
+/* user-select: the design has no copy control, so the cracked password is copied by selecting it. */
+.interactive-screen .screen-output { position: absolute; z-index: 2; display: flex; align-items: center; padding: 2px 8px; white-space: nowrap; overflow: auto; color: #42fa91; background: #092525; font: clamp(10px, 1.6vw, 21px)/1.3 ui-monospace, Consolas, monospace; border-radius: 4px; direction: ltr; user-select: text; }
+/* Click-to-copy on the output (no copy button in the design): pointer, glow on hover/focus, a "Copied" tag after a copy. */
+.interactive-screen .screen-output[role="button"] { cursor: copy; }
+.interactive-screen .t5-hash-description { white-space: normal; overflow-wrap: anywhere; align-items: flex-start; font-size: 14px; }
+@media (max-width: 600px) { .interactive-screen .t5-hash-description { font-size: 10px; line-height: 11px; min-height: 24px; padding: 1px 3px; } }
+.interactive-screen .t5-hash-description[data-copy]::after { display: none; }
+.interactive-screen .screen-output[role="button"]:hover, .interactive-screen .screen-output[role="button"]:focus-visible { outline: none; box-shadow: 0 0 0 2px #42fa9166, 0 0 14px #42fa9140; }
+.interactive-screen .screen-output[data-copy]::after { margin-left: auto; padding: 0 8px; border-radius: 99px; background: #0b3d2e; color: #42fa91; font: 700 clamp(9px, 1vw, 12px)/1.6 Inter, Arial, sans-serif; }
+.interactive-screen .screen-output[data-copy="copied"]::after { content: 'Copied'; }
+.interactive-screen .screen-output[data-copy="selected"]::after { content: 'Selected · copy it manually'; }
+.interactive-screen .screen-action { position: absolute; z-index: 3; display: block; min-height: 0; margin: 0; padding: 0; border: 1px solid transparent; border-radius: 7px; background: transparent; color: transparent; cursor: pointer; }
+.interactive-screen .screen-action:hover, .interactive-screen .screen-action:focus-visible { border-color: #e8ffffc9; box-shadow: 0 0 15px #67e7ff6b; outline: none; }
+.interactive-screen .screen-action:disabled { opacity: 1; cursor: progress; }
+/* The design's bar is direction: rtl for its Hebrew text; ours is English, so ltr keeps a trailing period at the end. */
+.interactive-screen .screen-error { position: absolute; left: 38%; top: 74%; width: 39%; z-index: 4; padding: 5px; text-align: center; direction: ltr; font-size: clamp(11px, 1.4vw, 16px); color: #fff; background: #9c172de0; border-radius: 7px; }
+.interactive-screen .dana-file { position: absolute; left: 54.8%; top: 37.6%; width: 8.1%; height: 12%; z-index: 3; display: block; min-height: 0; margin: 0; padding: 0; border: 1px solid transparent; background: transparent; border-radius: 6px; }
+.interactive-screen .dana-file img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.interactive-screen .dana-file:hover, .interactive-screen .dana-file:focus-visible { border-color: #a1ffff; box-shadow: 0 0 20px #36e5ff9c; outline: none; }

@@ -1,0 +1,28 @@
+{{- if .Values.fullStack.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: projecthon-team5-stream
+  annotations:
+    kubernetes.io/ingress.class: {{ .Values.fullStack.ingress.class }}
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+spec:
+  tls:
+    - hosts: [{{ .Values.fullStack.ingress.host | quote }}]
+      secretName: {{ .Values.fullStack.ingress.tlsSecret }}
+  rules:
+    - host: {{ .Values.fullStack.ingress.host }}
+      http:
+        paths:
+          - path: /api/team5/(sessions/[^/]+/stream)$
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: projecthon-team5
+                port:
+                  number: 3001
+{{- end }}

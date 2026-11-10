@@ -1,0 +1,6 @@
+/* RSA decryptor: the design's device fields plus a multi-line private key and a Copy button on the output (not in the design HTML). */
+.interactive-screen .t5-rsa-key { resize: none; overflow: auto; white-space: pre; line-height: 1.15; padding-top: 2px; padding-bottom: 2px; font-size: clamp(8px, 1vw, 13px); }
+.interactive-screen .t5-rsa-output { white-space: normal; overflow-wrap: anywhere; align-items: flex-start; padding-right: 14%; font-size: clamp(8px, 1.05vw, 13px); line-height: 1.2; }
+.interactive-screen .t5-rsa-copy { position: absolute; z-index: 3; margin: 0; padding: 0; border: 1px solid #42fa9199; border-radius: 4px; background: #0b3d2e; color: #42fa91; cursor: pointer; font: 700 clamp(9px, 1vw, 13px)/1 Inter, Arial, sans-serif; }
+.interactive-screen .t5-rsa-copy:hover, .interactive-screen .t5-rsa-copy:focus-visible { box-shadow: 0 0 10px #42fa9166; outline: none; }
+@media (max-width: 600px) { .interactive-screen .t5-rsa-output { font-size: 7px; line-height: 8px; padding: 1px 3px; padding-right: 16%; } }

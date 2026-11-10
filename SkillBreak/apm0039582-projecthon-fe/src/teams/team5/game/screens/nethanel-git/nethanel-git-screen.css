@@ -1,0 +1,19 @@
+/* Nathanel's git terminal: the design HTML's window-shell with its terminal host (header, back button, subtitle,
+   xterm host, footer, phone overrides). Scoped under .terminal-window so it stands alone and wins over game.css's
+   button rules. Subtitle and footer are right-aligned like the design's but read left to right: they are English here. */
+.window-shell.terminal-window { display: flex; flex-direction: column; width: min(94vw, 1120px); height: min(77svh, 740px); min-height: min(420px, 75svh); border: 1px solid #65b6f4a8; border-radius: 14px; background: #091626; box-shadow: 0 28px 80px #000d; overflow: hidden; direction: ltr; }
+.terminal-window .window-header { display: flex; align-items: center; gap: 10px; min-height: 49px; padding: 9px 14px; background: linear-gradient(90deg, #0b3762, #142d49); border-bottom: 1px solid #71baff55; color: #f3f9ff; font-size: clamp(12px, 1.4vw, 16px); font-weight: 750; }
+.terminal-window .window-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.terminal-window .window-back { display: inline-block; min-height: 0; font-weight: inherit; border: 1px solid #84c7ff99; border-radius: 7px; background: #153f65; color: white; padding: 5px 10px; font-size: 12px; flex-shrink: 0; }
+.terminal-window .window-back:hover { background: #24699f; }
+.terminal-window .window-subtitle { padding: 6px 14px; font-size: 11px; color: #a3c7e5; background: #0b1c2e; border-bottom: 1px solid #4b789a55; text-align: right; }
+.terminal-window .terminal-host { flex: 1; min-height: 0; padding: 14px; overflow: hidden; background: #080e18; }
+.terminal-window .terminal-host .xterm { height: 100%; }
+.terminal-window .window-footer { padding: 7px 14px; background: #0c2037; color: #a9cde9; font-size: 11px; border-top: 1px solid #2a5677; text-align: right; }
+
+@media (max-width: 700px) {
+  .window-shell.terminal-window { height: min(80svh, 680px); min-height: 0; }
+  .terminal-window .window-header { padding: 7px; gap: 5px; }
+  .terminal-window .window-back { padding: 4px 6px; font-size: 10px; }
+  .terminal-window .terminal-host { padding: 7px; }
+}

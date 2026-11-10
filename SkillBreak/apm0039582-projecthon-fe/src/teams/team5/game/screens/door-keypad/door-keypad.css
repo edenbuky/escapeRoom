@@ -1,0 +1,17 @@
+/* The design's keypad (.keypad-*), scoped under .interactive-screen like device-screen.css so it wins over game.css button rules. */
+.interactive-screen.keypad-scene { width: min(89vw, 610px, calc(74svh * .89)); }
+.interactive-screen .keypad-display { position: absolute; z-index: 2; left: 17.1%; top: 29.8%; width: 66.1%; height: 13.7%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4%; direction: ltr; color: #141c29; font: 700 clamp(11px, 2.5vmin, 27px)/1.2 ui-monospace, SFMono-Regular, Consolas, monospace; text-align: center; white-space: nowrap; border-radius: 10px; }
+.interactive-screen .keypad-readout { display: flex; flex-direction: row; direction: ltr; unicode-bidi: isolate; gap: .55em; letter-spacing: .06em; font-variant-numeric: tabular-nums; }
+.interactive-screen .keypad-group { display: block; direction: ltr; unicode-bidi: isolate; }
+.interactive-screen .keypad-status { direction: ltr; unicode-bidi: isolate; font-size: clamp(8px, 1.35vmin, 14px); font-weight: 900; line-height: 1.1; letter-spacing: .04em; min-height: 1em; }
+.interactive-screen .keypad-display.denied { color: #8b1620; background: #ff33431a; animation: keypadShake .28s ease-in-out; box-shadow: inset 0 0 18px #f3232340; }
+.interactive-screen .keypad-display.granted { color: #087641; background: #10d88119; box-shadow: inset 0 0 18px #12da6f53; }
+.interactive-screen .keypad-key { position: absolute; z-index: 3; padding: 0; margin: 0; min-height: 0; display: grid; place-items: center; border: 1px solid transparent; border-radius: 12%; background: transparent; color: #f2f7ff; font-size: clamp(13px, 3.1vmin, 37px); font-weight: 800; line-height: 1; text-shadow: 0 2px 5px #000d; -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: box-shadow .08s, background .08s, transform .08s, filter .08s; }
+.interactive-screen .keypad-key:hover, .interactive-screen .keypad-key:focus-visible { border-color: #b3e3ffad; box-shadow: inset 0 0 0 2px #7cceff38, 0 0 12px #7dcaff85; outline: none; }
+.interactive-screen .keypad-key:active, .interactive-screen .keypad-key.pressed { transform: translateY(3%) scale(.96); box-shadow: inset 0 7px 18px #000c, 0 0 0 2px #bbe4ff52; background: #c5e9ff24; filter: brightness(.87); }
+.interactive-screen .keypad-key[data-key="clear"]:active, .interactive-screen .keypad-key[data-key="clear"].pressed { background: #fe33535c; }
+.interactive-screen .keypad-key[data-key="enter"]:active, .interactive-screen .keypad-key[data-key="enter"].pressed { background: #32fa8569; }
+@keyframes keypadShake { 0%, 100% { translate: 0; } 25% { translate: -1.2% 0; } 75% { translate: 1.2% 0; } }
+/* The paste field and the Open door action sit between the keypad and its note (the design has neither). */
+.keypad-tools { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 9px; }
+.keypad-tools input { width: 21ch; padding: 6px 12px; border-radius: 99px; border: 1px solid #78caff63; background: #122235bd; color: #d6e8fb; font: 13px ui-monospace, SFMono-Regular, Consolas, monospace; text-align: center; direction: ltr; }
