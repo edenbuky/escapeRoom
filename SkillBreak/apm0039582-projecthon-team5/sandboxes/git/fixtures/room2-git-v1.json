@@ -1,0 +1,123 @@
+{
+  "fixture": "room2-git-v1",
+  "branch": "main",
+  "keyPath": "server.key",
+  "notes": [
+    "message is passed to isomorphic-git commit() as is; git stores it with a trailing newline.",
+    "timezoneOffset follows isomorphic-git: minutes, positive west of UTC (-180 is +03:00).",
+    "oid, tree and parent are the expected hashes when the commits are rebuilt with isomorphic-git."
+  ],
+  "commits": [
+    {
+      "oid": "52e60676fba452b93ec18e2d60e65da4415b2e5f",
+      "tree": "48d9c5b58c319e7d09903cf1fa830bc5b4322dbe",
+      "parent": null,
+      "author": {
+        "name": "Nathaniel Cohen",
+        "email": "nathaniel@cibus-demo.example",
+        "timestamp": 1789371000,
+        "timezoneOffset": -180
+      },
+      "committer": {
+        "name": "Nathaniel Cohen",
+        "email": "nathaniel@cibus-demo.example",
+        "timestamp": 1789371000,
+        "timezoneOffset": -180
+      },
+      "message": "Initial commit",
+      "files": {
+        "README.md": "# Cibus payments client\n\nSmall client the team uses to try Cibus payment calls.\n"
+      }
+    },
+    {
+      "oid": "9163ce420cb710a2b0e097f1d6b7d07a074306e0",
+      "tree": "b51a6e0e9907d03a27ceadeff4aa5dda45bc5978",
+      "parent": "52e60676fba452b93ec18e2d60e65da4415b2e5f",
+      "author": {
+        "name": "Nathaniel Cohen",
+        "email": "nathaniel@cibus-demo.example",
+        "timestamp": 1789458600,
+        "timezoneOffset": -180
+      },
+      "committer": {
+        "name": "Nathaniel Cohen",
+        "email": "nathaniel@cibus-demo.example",
+        "timestamp": 1789458600,
+        "timezoneOffset": -180
+      },
+      "message": "Add Cibus payment client",
+      "files": {
+        "README.md": "# Cibus payments client\n\nSmall client the team uses to try Cibus payment calls.\n",
+        "payments.js": "'use strict';\n// Sends a test payment to the Cibus sandbox endpoint over TLS.\nconst https = require('node:https');\n\nfunction pay(order, card) {\n  return https.request({ host: 'pay.cibus-demo.example', path: '/api/v2/payments', method: 'POST' });\n}\n\nmodule.exports = { pay };\n"
+      }
+    },
+    {
+      "oid": "3e685539aa8888ccc4f5879aad8f1c75845d462a",
+      "tree": "3c9a40b050830c4ab498a4f98ff2cdc5ee2e7697",
+      "parent": "9163ce420cb710a2b0e097f1d6b7d07a074306e0",
+      "author": {
+        "name": "Nathaniel Cohen",
+        "email": "nathaniel@cibus-demo.example",
+        "timestamp": 1790063400,
+        "timezoneOffset": -180
+      },
+      "committer": {
+        "name": "Nathaniel Cohen",
+        "email": "nathaniel@cibus-demo.example",
+        "timestamp": 1790063400,
+        "timezoneOffset": -180
+      },
+      "message": "Add server key for local TLS tests",
+      "files": {
+        "README.md": "# Cibus payments client\n\nSmall client the team uses to try Cibus payment calls.\n",
+        "payments.js": "'use strict';\n// Sends a test payment to the Cibus sandbox endpoint over TLS.\nconst https = require('node:https');\n\nfunction pay(order, card) {\n  return https.request({ host: 'pay.cibus-demo.example', path: '/api/v2/payments', method: 'POST' });\n}\n\nmodule.exports = { pay };\n",
+        "server.key": "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEAu7dbHCOPqyAGmV10bWWVvrI56VuGfrePC4RCYNUiZo8ujF9E\nhM0sbbyyvTOsa3fEG47VBsbmz58C8XF1Z2jb6pQwi4FT+n7PXUXSvMIaopmkCTQY\nyK3rVEuXq8CrSvImvGJL9IzEB7skL0lCQ3ZkiubApVc3/nm01tObmzGmtWDurQPj\nX+4mz5kTll5R/hHaxqHSqFhCNezjSNyI4Fgfui/LBnRXjyda2FEeoUirEjcbwJeU\nPBPXe4TOTMTVbiJIiVY+w7kXda3FCyu2eUk1PhTIL4yARUF68HdzMYHdQTU3t+te\no9f89Ubfbq3Dzb0p4LOCcqjwp/CeKn6scArUsQIDAQABAoIBAAEehP/MM3tW98sa\nzEqpsCSgrek3BzyCriroqTeoFaosYN/r4n3zNjhaR2uK3xSN9ICgj6MYdQBYZ51W\napeI/8SsiQSP6xcDgguBktHWy29cQKbgZWRu6wgH4lnfDnZmLrZxVJga7cFJC5xv\nkKJT1qIgYZYqyLXu9lXQka0xdNfAf1UYbBcPaWqPHsLIR96bNmE/QCD4LEKaFdMo\nGMwfTy7Hz8TmzpT6k7WHluczJFNC06uoR8OWz1YUh4+WKPVuvtXwzUBXDCZKcDyJ\nl1wUG2BygIG+H/FqCTght9D1TwfvLSRwNR2PToDdPvZikyurIBCYXhN9gUIU+OjY\npQdtxhUCgYEA6m8zT1h1QorXUwuZe6PjR950DUEEURKzB1gJk5mQdw05guh+LA6y\n6RdfR/JBCfooGV/AOaNRMhZ91bxMPqrQIsbyQNlLscxQg+3CbdzDsUSecN4bXk9m\ndVlH/UbvAcnapq2TC3Gl2Q9oEsuYu98Lnd8f5yrr5//mqdFWpf32yp0CgYEAzPv4\nF+PD6/xWwMUMzejJhqZAMleSB+NJTZ1X+9ki2j6SqpPWu8ZzqoSjl5mLTFDLFQ94\nkoipJOS0qDt7/7Ct20ch3BUk2JUpJuy3Jm6u0bzwuHKaxt5ymgk4/pA+rXJN55vj\nBJEUdAq5E/Zs8s7jg1hDutIV+LZNHOwzvF2R/CUCgYB37FyOCU0qtgWCONvR0Lty\nR0yMfybrJiqo5hM4CwVIsV4rJi1s8jP5YvhdwIIezXX3zPBzS6U8fx7t2D4UjKKe\nN7EzFTVQhZjmdBjSxGzi4JxAVo4fh3R9MSfPW5rmClEslHw1DXTufaAahUXjTS0P\nHFWglmdJLbHcSvcNQMYfTQKBgQCp0zc/05vGL1FQc/Cfx3Tu8V3OV27Myik4/Fqg\ndMzDM4QffkwxVcEOTMWcG8GkgGtAD4k9HavEvRZPKrkYpS/ks5IB3CKirTFi5kr2\ntExxx69HoOtKR5F6vJlTjf3fhQu2DxiN+ASR/zBGsaqhn3Yuozm51cQOQjqw86AJ\nNxxzYQKBgQDZFDNMR9PbP36ZMgeG/ihvt3q/ikUATfKrPBUUm6drdgD0wfDhGAQa\nMNiATdmOzvbs7OsLmLT3B/np2ySSKTR7Mhk3mnyTTVyCfKaM2kqyIA2jj8+WD09q\nUgG5838I2d0tQcFTBQQODiB6uKU9qtLv7n2GFvM2l7WtzysuhmGIBw==\n-----END RSA PRIVATE KEY-----\n"
+      }
+    },
+    {
+      "oid": "66d7591918318f7c6870f313e81abd918cbc0bb0",
+      "tree": "f422f7bd97212b576c5674fa1717b03a0cf3a2c6",
+      "parent": "3e685539aa8888ccc4f5879aad8f1c75845d462a",
+      "author": {
+        "name": "Nathaniel Cohen",
+        "email": "nathaniel@cibus-demo.example",
+        "timestamp": 1792654200,
+        "timezoneOffset": -180
+      },
+      "committer": {
+        "name": "Nathaniel Cohen",
+        "email": "nathaniel@cibus-demo.example",
+        "timestamp": 1792654200,
+        "timezoneOffset": -180
+      },
+      "message": "Document local TLS test setup",
+      "files": {
+        "README.md": "# Cibus payments client\n\nSmall client the team uses to try Cibus payment calls.\n\n## Local TLS test\n\nUse server.key with the sandbox certificate to inspect test captures.\n",
+        "payments.js": "'use strict';\n// Sends a test payment to the Cibus sandbox endpoint over TLS.\nconst https = require('node:https');\n\nfunction pay(order, card) {\n  return https.request({ host: 'pay.cibus-demo.example', path: '/api/v2/payments', method: 'POST' });\n}\n\nmodule.exports = { pay };\n",
+        "server.key": "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEAu7dbHCOPqyAGmV10bWWVvrI56VuGfrePC4RCYNUiZo8ujF9E\nhM0sbbyyvTOsa3fEG47VBsbmz58C8XF1Z2jb6pQwi4FT+n7PXUXSvMIaopmkCTQY\nyK3rVEuXq8CrSvImvGJL9IzEB7skL0lCQ3ZkiubApVc3/nm01tObmzGmtWDurQPj\nX+4mz5kTll5R/hHaxqHSqFhCNezjSNyI4Fgfui/LBnRXjyda2FEeoUirEjcbwJeU\nPBPXe4TOTMTVbiJIiVY+w7kXda3FCyu2eUk1PhTIL4yARUF68HdzMYHdQTU3t+te\no9f89Ubfbq3Dzb0p4LOCcqjwp/CeKn6scArUsQIDAQABAoIBAAEehP/MM3tW98sa\nzEqpsCSgrek3BzyCriroqTeoFaosYN/r4n3zNjhaR2uK3xSN9ICgj6MYdQBYZ51W\napeI/8SsiQSP6xcDgguBktHWy29cQKbgZWRu6wgH4lnfDnZmLrZxVJga7cFJC5xv\nkKJT1qIgYZYqyLXu9lXQka0xdNfAf1UYbBcPaWqPHsLIR96bNmE/QCD4LEKaFdMo\nGMwfTy7Hz8TmzpT6k7WHluczJFNC06uoR8OWz1YUh4+WKPVuvtXwzUBXDCZKcDyJ\nl1wUG2BygIG+H/FqCTght9D1TwfvLSRwNR2PToDdPvZikyurIBCYXhN9gUIU+OjY\npQdtxhUCgYEA6m8zT1h1QorXUwuZe6PjR950DUEEURKzB1gJk5mQdw05guh+LA6y\n6RdfR/JBCfooGV/AOaNRMhZ91bxMPqrQIsbyQNlLscxQg+3CbdzDsUSecN4bXk9m\ndVlH/UbvAcnapq2TC3Gl2Q9oEsuYu98Lnd8f5yrr5//mqdFWpf32yp0CgYEAzPv4\nF+PD6/xWwMUMzejJhqZAMleSB+NJTZ1X+9ki2j6SqpPWu8ZzqoSjl5mLTFDLFQ94\nkoipJOS0qDt7/7Ct20ch3BUk2JUpJuy3Jm6u0bzwuHKaxt5ymgk4/pA+rXJN55vj\nBJEUdAq5E/Zs8s7jg1hDutIV+LZNHOwzvF2R/CUCgYB37FyOCU0qtgWCONvR0Lty\nR0yMfybrJiqo5hM4CwVIsV4rJi1s8jP5YvhdwIIezXX3zPBzS6U8fx7t2D4UjKKe\nN7EzFTVQhZjmdBjSxGzi4JxAVo4fh3R9MSfPW5rmClEslHw1DXTufaAahUXjTS0P\nHFWglmdJLbHcSvcNQMYfTQKBgQCp0zc/05vGL1FQc/Cfx3Tu8V3OV27Myik4/Fqg\ndMzDM4QffkwxVcEOTMWcG8GkgGtAD4k9HavEvRZPKrkYpS/ks5IB3CKirTFi5kr2\ntExxx69HoOtKR5F6vJlTjf3fhQu2DxiN+ASR/zBGsaqhn3Yuozm51cQOQjqw86AJ\nNxxzYQKBgQDZFDNMR9PbP36ZMgeG/ihvt3q/ikUATfKrPBUUm6drdgD0wfDhGAQa\nMNiATdmOzvbs7OsLmLT3B/np2ySSKTR7Mhk3mnyTTVyCfKaM2kqyIA2jj8+WD09q\nUgG5838I2d0tQcFTBQQODiB6uKU9qtLv7n2GFvM2l7WtzysuhmGIBw==\n-----END RSA PRIVATE KEY-----\n"
+      }
+    },
+    {
+      "oid": "6fac653e2f94c940b0eb10e354160c145171d744",
+      "tree": "60afb249f2e96db5028c488b43f1a173438d8d2e",
+      "parent": "66d7591918318f7c6870f313e81abd918cbc0bb0",
+      "author": {
+        "name": "Nathaniel Cohen",
+        "email": "nathaniel@cibus-demo.example",
+        "timestamp": 1793000100,
+        "timezoneOffset": -120
+      },
+      "committer": {
+        "name": "Nathaniel Cohen",
+        "email": "nathaniel@cibus-demo.example",
+        "timestamp": 1793000100,
+        "timezoneOffset": -120
+      },
+      "message": "Security fix: Removed private key from repository.",
+      "files": {
+        "README.md": "# Cibus payments client\n\nSmall client the team uses to try Cibus payment calls.\n\n## Local TLS test\n\nUse server.key with the sandbox certificate to inspect test captures.\n",
+        "payments.js": "'use strict';\n// Sends a test payment to the Cibus sandbox endpoint over TLS.\nconst https = require('node:https');\n\nfunction pay(order, card) {\n  return https.request({ host: 'pay.cibus-demo.example', path: '/api/v2/payments', method: 'POST' });\n}\n\nmodule.exports = { pay };\n"
+      }
+    }
+  ]
+}

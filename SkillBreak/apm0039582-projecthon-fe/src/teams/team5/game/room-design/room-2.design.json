@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "roomId": "room-2",
+  "tag": "ROOM 02 · CIBUS PAYMENT",
+  "characters": {
+    "nathanel": { "displayName": "Nathanel" }
+  },
+  "title": { "characterId": "nathanel", "suffix": "room" },
+  "stage": {
+    "aspectRatio": [4, 3],
+    "maxWidth": 1400,
+    "viewportHeightOffset": 132,
+    "backgroundFit": "fill",
+    "backgrounds": {
+      "closed": "room-background-closed",
+      "open": "room-background-open"
+    }
+  },
+  "hotspots": [
+    {
+      "id": "board",
+      "puzzleId": null,
+      "characterId": "nathanel",
+      "label": "task board",
+      "assetId": "task-board",
+      "surface": "wall",
+      "left": 37.4,
+      "top": 1.7,
+      "width": 36.5,
+      "height": 37.6,
+      "zIndex": 1
+    },
+    {
+      "id": "netanel",
+      "puzzleId": "nethanel-git",
+      "characterId": "nathanel",
+      "label": "computer · Git / PCAP",
+      "assetId": "computer-hotspot",
+      "surface": "desk",
+      "left": 35,
+      "top": 32,
+      "width": 22,
+      "aspectRatio": [3, 2],
+      "zIndex": 4
+    },
+    {
+      "id": "rsa",
+      "puzzleId": "rsa-decryptor",
+      "characterId": null,
+      "label": "RSA Decryptor",
+      "assetId": "rsa-decryptor-hotspot",
+      "surface": "desk",
+      "left": 20,
+      "top": 54.5,
+      "width": 27,
+      "aspectRatio": [3, 2],
+      "zIndex": 2
+    },
+    {
+      "id": "tls",
+      "puzzleId": "tls-decryptor",
+      "characterId": null,
+      "label": "TLS Decryptor",
+      "assetId": "tls-decryptor-hotspot",
+      "surface": "desk",
+      "left": 49,
+      "top": 53.4,
+      "width": 29.6,
+      "aspectRatio": [3, 2],
+      "zIndex": 2
+    },
+    {
+      "id": "keypad",
+      "puzzleId": "door",
+      "characterId": null,
+      "label": "Exit keypad",
+      "assetId": "keypad-hotspot",
+      "surface": "desk",
+      "left": 84,
+      "top": 37,
+      "width": 12,
+      "aspectRatio": [1320, 1192],
+      "zIndex": 5
+    }
+  ],
+  "decorations": [
+    { "id": "plantMain", "assetId": "plant-main", "left": 46.5, "top": 36.5, "width": 12.1, "height": 14.5, "zIndex": 3 },
+    { "id": "plantSmall", "assetId": "plant-small", "left": 64.2, "top": 35.2, "width": 6.5, "height": 6.3, "zIndex": 3 },
+    { "id": "lamp", "assetId": "lamp", "left": 54.5, "top": 27.5, "width": 11.5, "height": 23, "zIndex": 3 }
+  ],
+  "door": {
+    "left": 79.2,
+    "top": 3,
+    "width": 20,
+    "height": 88,
+    "zIndex": 3,
+    "labelLocked": "🔒 Code required",
+    "labelHint": "🔒 Enter the code on the keypad",
+    "labelOpen": "To the victory room ←"
+  },
+  "desktop": {
+    "puzzleId": "nethanel-git",
+    "title": "computer · Cibus Payment",
+    "image": "computer-desktop",
+    "imageAlt": "computer with the project folder",
+    "note": "Choose a file to open · Click outside the computer to return to the room",
+    "files": [
+      { "id": "git", "className": "git-file", "assetId": "git-file", "label": "project_cibus_payment", "screen": "nethanel-git" },
+      { "id": "pcap", "className": "pcap-file", "assetId": "capture-file", "label": "Cibus_payment_try.pcap", "screen": "capture-viewer" }
+    ]
+  },
+  "boardNote": "Click outside the picture to return to the room"
+}

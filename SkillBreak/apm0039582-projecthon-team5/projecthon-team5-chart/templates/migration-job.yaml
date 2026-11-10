@@ -1,0 +1,48 @@
+{{- if .Values.migrations.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: projecthon-team5-migrate-{{ .Release.Revision }}
+  labels:
+    app.kubernetes.io/name: projecthon-team5
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      serviceAccountName: projecthon-team5
+      restartPolicy: Never
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecret }}
+      {{- if .Values.secrets.enabled }}
+      volumes:
+        - name: secrets-store-inline
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: projecthon-team5-spc
+      {{- end }}
+      containers:
+        - name: migrations
+          image: "{{ .Values.image.repository }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["node", "scripts/migrate-shared.js"]
+          env:
+            {{- with .Values.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+            {{- range .Values.secrets.envSecretObjects }}
+            - name: {{ .envKey }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .k8sSecretName }}
+                  key: {{ .envKey }}
+            {{- end }}
+          {{- if .Values.secrets.enabled }}
+          volumeMounts:
+            - name: secrets-store-inline
+              mountPath: /mnt/secrets-store
+              readOnly: true
+          {{- end }}
+{{- end }}

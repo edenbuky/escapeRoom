@@ -1,0 +1,53 @@
+replicaCount: 1
+
+fullStack:
+  enabled: true
+
+migrations:
+  enabled: false
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+#+--------------------+
+#|    Secrets         |
+#+--------------------+
+secrets:
+  enabled: true
+  mntVolSecretObjects: []
+  envSecretObjects:
+    - keyVaultSecretName: applicationinsights-connection-string
+      envKey: APPLICATIONINSIGHTS_CONNECTION_STRING
+      k8sSecretName: projecthon-team5-secrets
+    - keyVaultSecretName: tdp2026-db-user
+      envKey: DB_USER
+      k8sSecretName: projecthon-team5-secrets
+    - keyVaultSecretName: tdp2026-db-password
+      envKey: DB_PASSWORD
+      k8sSecretName: projecthon-team5-secrets
+    - keyVaultSecretName: projecthon-team5-jwt-access-secret
+      envKey: JWT_ACCESS_SECRET
+      k8sSecretName: projecthon-team5-runtime
+    - keyVaultSecretName: projecthon-team5-internal-api-token
+      envKey: INTERNAL_API_TOKEN
+      k8sSecretName: projecthon-team5-runtime
+
+#+--------------------+
+#|    Non-secret DB connection info (plain env)
+#+--------------------+
+env:
+  - name: DB_HOST
+    value: 'tdp-westus2-dev-flexible-pg.postgres.database.azure.com'
+  - name: DB_PORT
+    value: '5432'
+  - name: DB_NAME
+    value: 'tdp-2026-db'
+  - name: DB_SSL
+    value: 'true'
+  - name: HOST
+    value: '0.0.0.0'

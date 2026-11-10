@@ -1,0 +1,19 @@
+{{- if .Values.fullStack.enabled }}
+{{- if or (ne (int .Values.replicaCount) 1) .Values.autoscaling.enabled }}
+{{- fail "In-process gateway/Engine transport requires one backend replica and Recreate; distributed messaging is required before scaling" }}
+{{- end }}
+{{- if .Values.migrations.enabled }}
+{{- fail "Full-stack deployment runs migrations in its init container; disable the separate migration Job" }}
+{{- end }}
+{{- if or (ne .Values.fullStack.ingress.host "projecthon.dev.att.com") (ne .Values.fullStack.runtimeSecret "projecthon-team5-runtime") }}
+{{- fail "This overlay targets the existing projecthon.dev.att.com routing and projecthon-team5-runtime Secret; use a separate reviewed configuration for a different environment" }}
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: projecthon-team5-runtime
+data:
+  {{- range $key, $value := .Values.fullStack.config }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
+{{- end }}

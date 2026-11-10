@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SkillBreak Explained</title>
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --ink: #18202b; --muted: #5b6676; --line: #d9dee6;
+  --accent: #1f6feb; --accent-soft: #e6efff;
+  --fe: #0b7a75; --fe-soft: #e0f4f3; --gw: #7a4cc2; --gw-soft: #efe7fb;
+  --en: #1f6feb; --en-soft: #e6efff; --sb: #b35c00; --sb-soft: #fdf0e1; --db: #4d5b6b; --db-soft: #eceff3;
+  --fix: #c62828; --fix-soft: #fdeaea; --dev: #8a5a00; --dev-soft: #fff4dc; --extra: #2e7d32; --extra-soft: #e6f4e7;
+  --shadow: 0 1px 2px rgba(0,0,0,.06), 0 4px 14px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f141a; --panel: #171e27; --ink: #e6edf5; --muted: #9aa7b6; --line: #2a3441;
+    --accent: #5b9dff; --accent-soft: #1b2a40;
+    --fe: #4fd1c5; --fe-soft: #12302f; --gw: #b794f4; --gw-soft: #2a2140; --en: #5b9dff; --en-soft: #1b2a40;
+    --sb: #f6ad55; --sb-soft: #3a2a14; --db: #a0aec0; --db-soft: #232b36;
+    --fix: #fc8181; --fix-soft: #3b1d1d; --dev: #f6c76b; --dev-soft: #3a3016; --extra: #68d391; --extra-soft: #183323;
+    --shadow: 0 1px 2px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f141a; --panel: #171e27; --ink: #e6edf5; --muted: #9aa7b6; --line: #2a3441;
+  --accent: #5b9dff; --accent-soft: #1b2a40;
+  --fe: #4fd1c5; --fe-soft: #12302f; --gw: #b794f4; --gw-soft: #2a2140; --en: #5b9dff; --en-soft: #1b2a40;
+  --sb: #f6ad55; --sb-soft: #3a2a14; --db: #a0aec0; --db-soft: #232b36;
+  --fix: #fc8181; --fix-soft: #3b1d1d; --dev: #f6c76b; --dev-soft: #3a3016; --extra: #68d391; --extra-soft: #183323;
+  --shadow: 0 1px 2px rgba(0,0,0,.4);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .88em; }
+code { background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; }
+header.top { max-width: 1180px; margin: 0 auto; padding: 28px 16px 8px; display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+header.top h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: -.01em; }
+header.top p { margin: 0; color: var(--muted); max-width: 760px; }
+.theme { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 8px; padding: 6px 10px; cursor: pointer; font: inherit; font-size: 13px; }
+nav.tabs { max-width: 1180px; margin: 14px auto 0; padding: 0 16px; display: flex; gap: 6px; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+nav.tabs button { border: 0; background: none; color: var(--muted); padding: 10px 12px; font: inherit; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+nav.tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+main { max-width: 1180px; margin: 0 auto; padding: 18px 16px 60px; }
+section.view { display: none; }
+section.view.active { display: block; }
+.lead { color: var(--muted); margin: 0 0 16px; max-width: 820px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .grid2 { grid-template-columns: 1fr; } }
+.map { padding: 14px; }
+.lane { border: 1px dashed var(--line); border-radius: 10px; padding: 10px; margin-bottom: 10px; }
+.lane h3 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.lane .row { display: flex; flex-wrap: wrap; gap: 8px; }
+.node { flex: 1 1 150px; min-width: 0; text-align: left; border: 1px solid var(--line); border-left: 4px solid var(--c); background: var(--cs); color: var(--ink); border-radius: 8px; padding: 8px 10px; cursor: pointer; font: inherit; font-size: 13.5px; line-height: 1.3; }
+.node b { display: block; font-size: 14px; }
+.node span { color: var(--muted); font-size: 12px; }
+.node:hover, .node:focus-visible { outline: 2px solid var(--c); outline-offset: 1px; }
+.node.sel { box-shadow: 0 0 0 2px var(--c) inset; }
+.node .tag { display: inline-block; margin-top: 4px; font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 99px; background: var(--panel); color: var(--c); border: 1px solid var(--c); }
+.k-fe { --c: var(--fe); --cs: var(--fe-soft); } .k-gw { --c: var(--gw); --cs: var(--gw-soft); } .k-en { --c: var(--en); --cs: var(--en-soft); }
+.k-sb { --c: var(--sb); --cs: var(--sb-soft); } .k-db { --c: var(--db); --cs: var(--db-soft); }
+.arrow { text-align: center; color: var(--muted); font-size: 12px; margin: -2px 0 8px; }
+.detail { padding: 16px; position: sticky; top: 12px; }
+.detail h2 { margin: 0 0 4px; font-size: 18px; }
+.detail .where { color: var(--muted); font-size: 12.5px; margin-bottom: 10px; word-break: break-word; }
+.detail ul { padding-left: 18px; margin: 6px 0; }
+.detail li { margin: 3px 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.chip { font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
+.chip.fix { color: var(--fix); border-color: var(--fix); background: var(--fix-soft); }
+.chip.dev { color: var(--dev); border-color: var(--dev); background: var(--dev-soft); }
+.chip.extra { color: var(--extra); border-color: var(--extra); background: var(--extra-soft); }
+.chip.task { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin: 0 0 10px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; background: var(--c); }
+.path { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.step { padding: 12px; cursor: pointer; text-align: left; font: inherit; color: var(--ink); }
+.step .n { font-size: 11px; font-weight: 800; color: var(--accent); letter-spacing: .05em; }
+.step b { display: block; margin: 2px 0 4px; }
+.step p { margin: 0; color: var(--muted); font-size: 13px; }
+.step.room2 .n { color: var(--sb); }
+.step.end .n { color: var(--extra); }
+.step[aria-expanded="true"] { outline: 2px solid var(--accent); }
+.step .more { display: none; margin-top: 8px; font-size: 13px; }
+.step[aria-expanded="true"] .more { display: block; }
+.flow { padding: 16px; }
+.flow-ctrl { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+.flow-ctrl button, .filter button { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 8px; padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+.flow-ctrl button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.flow-ctrl select { font: inherit; font-size: 13px; padding: 5px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); max-width: 100%; }
+.hops { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 14px; }
+.hop { font-size: 12.5px; padding: 6px 9px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); transition: all .2s; }
+.hop.on { background: var(--cs); border-color: var(--c); color: var(--ink); font-weight: 700; }
+.hop.done { color: var(--ink); }
+.sep { color: var(--muted); font-size: 12px; }
+.flow-text { min-height: 92px; border-left: 3px solid var(--accent); padding: 4px 12px; }
+.flow-text b { display: block; margin-bottom: 4px; }
+.chain { padding: 16px; overflow-x: auto; }
+.chain h3 { margin: 4px 0 10px; font-size: 14px; }
+.links { display: flex; align-items: stretch; min-width: max-content; margin-bottom: 18px; }
+.br { border: 1px solid var(--line); border-top: 4px solid var(--c); background: var(--panel); border-radius: 8px; padding: 8px 10px; width: 168px; cursor: pointer; text-align: left; font: inherit; color: var(--ink); font-size: 12.5px; }
+.br code { background: none; padding: 0; font-size: 11.5px; color: var(--muted); display: block; word-break: break-all; }
+.br b { display: block; font-size: 13px; margin-bottom: 2px; }
+.br.sel { box-shadow: 0 0 0 2px var(--c) inset; }
+.link { align-self: center; width: 22px; text-align: center; color: var(--muted); }
+.k-base { --c: var(--db); } .k-extra { --c: var(--extra); } .k-r2 { --c: var(--accent); } .k-docs { --c: var(--gw); }
+.brinfo { padding: 12px 14px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 8px 8px 0; font-size: 14px; position: sticky; left: 0; }
+.filter { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.filter button[aria-pressed="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+.changes { display: grid; gap: 10px; }
+.chg { padding: 12px 14px; border-left: 4px solid var(--c); }
+.chg.fix { --c: var(--fix); } .chg.dev { --c: var(--dev); } .chg.extra { --c: var(--extra); }
+.chg h4 { margin: 0 0 4px; font-size: 15px; }
+.chg .meta { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.chg p { margin: 4px 0; font-size: 14px; }
+.count { color: var(--muted); font-size: 13px; margin: 0 0 10px; }
+footer { color: var(--muted); font-size: 12.5px; text-align: center; padding: 20px 16px 40px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div>
+    <h1>SkillBreak, Team 5: what was built and how it fits</h1>
+    <p>An interactive map of the escape room: the modules, how a player's action travels through them, the
+    branches each feature lives on, and every change made along the way, including bug fixes, deliberate
+    departures from the design, and work done outside the planned tasks. Click anything.</p>
+  </div>
+  <button class="theme" id="theme" type="button" aria-label="Toggle light or dark theme">Theme</button>
+</header>
+<nav class="tabs" role="tablist" aria-label="Sections">
+  <button role="tab" aria-selected="true" data-view="arch">1 · Architecture</button>
+  <button role="tab" aria-selected="false" data-view="path">2 · Game path</button>
+  <button role="tab" aria-selected="false" data-view="flow">3 · One command, step by step</button>
+  <button role="tab" aria-selected="false" data-view="branches">4 · Branches</button>
+  <button role="tab" aria-selected="false" data-view="changes">5 · Changes, fixes &amp; extras</button>
+</nav>
+<main>
+<section class="view active" id="arch" role="tabpanel">
+  <p class="lead">Two folders, connected only by ports. The browser talks to the <b>gateway</b> (:3000) for
+  commands and to the <b>engine</b> (:3001) for live updates. The engine owns the game rules and runs the
+  puzzle sandboxes inside its own process. Click a box to see what it does, where its code lives, and what
+  changed in it.</p>
+  <div class="legend">
+    <span class="k-fe"><i></i>Frontend (team5 folder)</span><span class="k-gw"><i></i>Gateway</span>
+    <span class="k-en"><i></i>Game engine</span><span class="k-sb"><i></i>Sandboxes &amp; crypto</span><span class="k-db"><i></i>Data</span>
+  </div>
+  <div class="grid2">
+    <div class="card map" id="map"></div>
+    <aside class="card detail" id="detail" aria-live="polite"></aside>
+  </div>
+</section>
+<section class="view" id="path" role="tabpanel">
+  <p class="lead">The winning path, as played end to end on 10 Nov 2026 against the real backend. Each puzzle
+  opens only after the one before it (<code>opensAfter</code> in the published script). Click a step for the
+  exact input and what happens behind it.</p>
+  <div class="path" id="steps"></div>
+</section>
+<section class="view" id="flow" role="tabpanel">
+  <p class="lead">What happens between pressing Enter and seeing the answer. Pick a scenario and step through
+  it; the highlighted box is the module doing the work.</p>
+  <div class="card flow">
+    <div class="flow-ctrl">
+      <label for="scenario" class="mono" style="font-size:12px;color:var(--muted)">Scenario</label>
+      <select id="scenario"></select>
+      <button type="button" id="prev">◀ Back</button>
+      <button type="button" id="next" class="primary">Next step ▶</button>
+      <button type="button" id="play">Play</button>
+      <span id="pos" class="mono" style="font-size:12px;color:var(--muted)"></span>
+    </div>
+    <div class="hops" id="hops"></div>
+    <div class="flow-text" id="flowtext" aria-live="polite"></div>
+  </div>
+</section>
+<section class="view" id="branches" role="tabpanel">
+  <p class="lead">One branch per feature, each cut from the one before it, so the history reads in the order the
+  work was done. There is no GitHub: both repositories carry all branches in their <code>.git</code> folder.
+  Click a branch.</p>
+  <div class="card chain" id="chain"></div>
+</section>
+<section class="view" id="changes" role="tabpanel">
+  <p class="lead">Everything worth knowing that is not obvious from the task list: <b style="color:var(--fix)">bugs</b>
+  found during review and how they were fixed, <b style="color:var(--dev)">deliberate departures</b> from
+  DESIGN-v2 / tasks.md and why, and <b style="color:var(--extra)">work done outside the tasks</b>.</p>
+  <div class="filter" id="filter" role="group" aria-label="Filter changes"></div>
+  <p class="count" id="count"></p>
+  <div class="changes" id="list"></div>
+</section>
+</main>
+<footer>Source of truth: <code>DESIGN-v2.md</code>, <code>tasks.md</code> (Execution Audit section),
+<code>docs/adr/0001-embedded-sandbox-driver.md</code>, <code>AGENT-QUICKSTART.md</code>. Works offline.</footer>
+<script>
+// All markup below comes from the constants in this file (no user or network input).
+const put = (el, markup) => el.replaceChildren(document.createRange().createContextualFragment(markup));
+const $ = id => document.getElementById(id);
+
+const NODES = {
+  browser: { k: 'fe', name: 'Standalone page', sub: 'GameApp · sign-in, start, victory', where: 'fe: src/teams/team5/game/GameApp.tsx, standalone/index.html',
+    what: ['Signs the player in (create account / sign in), starts a session and keeps it after reload.', 'Opens the live stream and renders whatever the session view says: room, puzzles, timer, victory.', 'Shows the Escaped victory screen (Room 03) instead of "Game over".'],
+    tasks: ['R2-08'], changes: ['Background video blurred (outside tasks)', 'Music no longer autoplays (outside tasks)'] },
+  room: { k: 'fe', name: 'Rooms', sub: 'RoomFrame · Room 1 stage, Room2Stage', where: 'fe: game/RoomFrame.tsx, Room2Stage.tsx, Room2Window.tsx, room-design/*.json',
+    what: ['Draws each room from a design JSON copied from the HTML (same pictures, same percentage hotspots).', 'Room 2: Nathanel\'s computer, task board, RSA & TLS machines, exit keypad; the door opens after the code.', 'Doors call the gateway: open-door, then enter.'],
+    tasks: ['R2-02', 'R2-08'], changes: ['Desktop icon renamed to Cibus_payment_try.pcap (design name)'] },
+  screens: { k: 'fe', name: 'Puzzle screens', sub: 'one per puzzle', where: 'fe: game/screens/* (idan-sql, hash-cracker, dana-login, nethanel-git, capture-viewer, rsa-decryptor, tls-decryptor, door-keypad)',
+    what: ['Room 1: SQL terminal, Hash Cracker, Dana\'s login + desktop.', 'Room 2: git terminal (xterm, vendored), Wireshark-style capture viewer, RSA decryptor, TLS decryptor, 16-digit keypad.', 'Each screen sends one typed input ({kind: …}) and shows the result from the session view. Drafts survive reload.'],
+    tasks: ['R2-03', 'R2-05', 'R2-06', 'R2-07', 'R2-08'], changes: ['Keypad lost digits when typed fast (fixed)', 'Terminal waited 30 s on engine rejections (fixed)', 'Capture table was empty in preview data (fixed)'] },
+  gateway: { k: 'gw', name: 'Gateway', sub: 'NestJS · :3000', where: 'be: apps/gateway (local: apps/local-runtime runs it with the engine)',
+    what: ['Public routes under /api/team5: auth (JWT + refresh), start/abandon session, submit input, open-door / enter.', 'Checks the session belongs to the player, answers 202, forwards the command to the engine over an internal HTTP call with INTERNAL_API_TOKEN.'],
+    tasks: [], changes: ['Validator accepts the new Room 2 input kinds (R2-01)', 'Redis removed (outside tasks)'] },
+  engine: { k: 'en', name: 'Engine service', sub: 'guards · transaction · events', where: 'be: apps/game-engine/src/modules/sessions/engine.service.ts',
+    what: ['Loads the session snapshot, checks guards (Active, before deadline, puzzle open, sandbox ready, generation).', 'Asks the component for a verdict, then runs transition() and stores snapshot + events in one transaction.'],
+    tasks: ['R2-03', 'R2-04'], changes: ['Sandbox path generalised from "SQL only" to any sandbox engine (R2-03)', 'Logs ruin and reset with the failed invariant (R2-04)'] },
+  transition: { k: 'en', name: 'transition()', sub: 'pure state machine', where: 'be: sessions/core/transition.ts, doors.ts, room-files.ts, eligibility.ts',
+    what: ['Pure function: (snapshot, command, verdict) → new snapshot + events. No I/O, fully unit-tested.', 'Opens puzzles by opensAfter, reveals files (revealedBy), opens doors from catalog door data, ends the game as Escaped, resets a ruined git puzzle with a new generation.'],
+    tasks: ['R2-04', 'R2-05', 'R2-08'], changes: ['revealedBy leaked to players (fixed)', 'Door rules now come from the catalog, not hard-coded room names (R2-08)', 'One legacy Room 1 door entry kept for catalog v3/v4'] },
+  components: { k: 'en', name: 'Component factory', sub: 'one evaluator per puzzle engine', where: 'be: modules/components/components.ts, rsa.component.ts, tls.component.ts',
+    what: ['Turns one input into a verdict: solved / progress / rejected(reason) / ruined.', 'sql & terminal-git → sandbox; hash, rsa, tls → crypto pool; answer → constant-time compare (credentials, door code).'],
+    tasks: ['R2-03', 'R2-06', 'R2-07', 'R2-08'], changes: ['Git invariant probe after every command → "ruined" (R2-04)'] },
+  crypto: { k: 'sb', name: 'Crypto worker pool', sub: 'hash · rsa · tls', where: 'be: modules/components/hash-pool.ts (CryptoPool), crypto-tasks.ts, crypto.worker.ts',
+    what: ['Worker threads with a 2 s limit and a bounded queue, so a heavy input never blocks the server.', 'RSA: checks key, N and encrypted PMS, decrypts, compares in constant time. TLS: TLS 1.2 PRF → keys → AES-128-GCM over the captured records; solved only if every tag verifies.'],
+    tasks: ['R2-06', 'R2-07'], changes: ['Node 22 refuses PKCS#1 v1.5 private decrypt → raw decrypt + manual unpadding'] },
+  driver: { k: 'sb', name: 'SandboxDriver', sub: 'embedded (default) · kubernetes', where: 'be: modules/sandbox/sandbox-driver.ts, embedded-driver.ts, kubernetes-driver.ts, sandbox-worker.ts, sandbox-executor.ts',
+    what: ['One interface for provision → ready → exec → destroy, with stored results per command id and generations.', 'SANDBOX_DRIVER=embedded runs sandboxes inside the engine (works locally and on AKS). kubernetes keeps the original pod driver for SQL.'],
+    tasks: ['R2-03'], changes: ['Embedded driver replaces pods (outside tasks, ADR 0001)'] },
+  sql: { k: 'sb', name: 'SQL sandbox', sub: 'PGlite in a worker thread', where: 'be: modules/sandbox/embedded-sql.ts, embedded-sql.worker.ts; sandboxes/sql/fixtures/room1-sql-v1.sql',
+    what: ['Postgres compiled to WebAssembly, loaded from the Room 1 fixture.', 'Every query: BEGIN READ ONLY, as sandbox_player, 5 s limit, 64 KB output, rolled back.'],
+    tasks: [], changes: ['Built before Room 2 to replace the pod (outside tasks)'] },
+  git: { k: 'sb', name: 'Git sandbox', sub: 'isomorphic-git + memfs', where: 'be: modules/sandbox/embedded-git*.ts, git-command.ts, git-shell.ts, git-invariants.ts; sandboxes/git/fixtures/room2-git-v1.json',
+    what: ['Nathanel\'s repository rebuilt in memory from a fixture for every sandbox generation; no host files, network or shell.', 'One command per line; pipes, ;, &, redirects, $, backticks are refused. vim, less, curl… → "Command not allowed".', 'After each command an invariant probe checks history; an extra commit or rewritten history → reset.'],
+    tasks: ['R2-03', 'R2-04'], changes: ['Embedded instead of a pod (decision)', 'git show HEAD~1:server.key prints the key, not git show HEAD~1'] },
+  projection: { k: 'en', name: 'Projection + SSE', sub: 'session view · live stream', where: 'be: modules/projection/* (reducer, consumer, session-stream.controller.ts)',
+    what: ['Folds events into one session view per player (rooms, puzzles, latest result, files, status).', 'Pushes it over Server-Sent Events; on reload the browser gets the same view back.'],
+    tasks: ['R2-04', 'R2-05', 'R2-08'], changes: ['Handles PuzzleReset and SessionEscaped', 'Encrypted → decrypted capture swap'] },
+  catalog: { k: 'en', name: 'Script catalog', sub: 'published versions v1 … v5', where: 'be: modules/script-catalog/room1.ts, room2.ts, room2-scenario.generated.ts, publish-*.ts; scripts/room2/*',
+    what: ['The game content as data: rooms, puzzles, opensAfter, doors, files, templates, final state "escaped".', 'v5 adds Room 2. scripts/room2/generate.js builds the key, certificate, capture and door card; verify.js proves the whole chain decrypts.'],
+    tasks: ['R2-01'], changes: ['Door card is a generated Luhn-valid test number (decision)'] },
+  db: { k: 'db', name: 'Two Postgres databases', sub: 'users DB · engine DB (schema team5)', where: 'be: docker-compose.yml (postgres :5432, engine-db :5433), migrations',
+    what: ['Users DB: accounts and refresh tokens (gateway). Engine DB: snapshots, events, command log, sandbox instances, session views, published scripts.', 'Both use schema team5; locally create it once (see the quickstart).'],
+    tasks: [], changes: ['Migration relaxed seed_ref to allow room2-git-v1 (R2-03)'] },
+};
+const LANES = [
+  { title: 'Browser · frontend folder (team5 only)', ids: ['browser', 'room', 'screens'] },
+  { arrow: 'HTTP /api/team5/* → :3000      ·      live view ← SSE :3001' },
+  { title: 'Backend folder · gateway', ids: ['gateway'] },
+  { arrow: 'internal HTTP (INTERNAL_API_TOKEN)' },
+  { title: 'Backend folder · game engine', ids: ['engine', 'transition', 'components', 'projection', 'catalog'] },
+  { arrow: 'inside the engine process' },
+  { title: 'Sandboxes & crypto (no pods, no containers)', ids: ['driver', 'sql', 'git', 'crypto'] },
+  { arrow: 'TypeORM' },
+  { title: 'Data', ids: ['db'] },
+];
+const TASKNAMES = { 'R2-01': 'Room 2 content (v5)', 'R2-02': 'Room 2 scene', 'R2-03': 'Git sandbox + terminal', 'R2-04': 'Git ruin & reset', 'R2-05': 'Capture viewer + reveal', 'R2-06': 'RSA decryptor', 'R2-07': 'TLS decryptor', 'R2-08': 'Keypad, doors, victory', 'R2-09': 'Winning path + runbook' };
+
+function renderMap() {
+  put($('map'), LANES.map(l => l.arrow ? `<div class="arrow">↕ ${l.arrow}</div>` :
+    `<div class="lane"><h3>${l.title}</h3><div class="row">${l.ids.map(id => { const n = NODES[id];
+      return `<button type="button" class="node k-${n.k}" data-id="${id}"><b>${n.name}</b><span>${n.sub}</span>${n.changes.length ? `<br><span class="tag">${n.changes.length} change${n.changes.length > 1 ? 's' : ''}</span>` : ''}</button>`; }).join('')}</div></div>`).join(''));
+  $('map').addEventListener('click', e => { const b = e.target.closest('.node'); if (b) showNode(b.dataset.id); });
+}
+function showNode(id) {
+  const n = NODES[id];
+  document.querySelectorAll('.node').forEach(b => b.classList.toggle('sel', b.dataset.id === id));
+  put($('detail'), `<h2>${n.name}</h2><div class="where mono">${n.where}</div>
+    <b>What it does</b><ul>${n.what.map(w => `<li>${w}</li>`).join('')}</ul>
+    ${n.changes.length ? `<b>Changed / worth knowing</b><ul>${n.changes.map(c => `<li>${c}</li>`).join('')}</ul>` : ''}
+    <div class="chips">${n.tasks.map(t => `<span class="chip task">${t} · ${TASKNAMES[t]}</span>`).join('') || '<span class="chip">existing module</span>'}</div>`);
+}
+
+const STEPS = [
+  { r: 1, t: 'SQL: find Dana\'s hash', p: 'Idan\'s computer', more: 'Query <code>SELECT l.password_hash FROM logs l JOIN employees e ON e.id = l.employee_id WHERE e.username = \'danaZ22\' AND l.password_hash IS NOT NULL</code>. Runs in the embedded PGlite sandbox; solved when the result contains the hash.' },
+  { r: 1, t: 'Hash Cracker', p: 'Paste the hash', more: 'Crypto pool compares in a worker; solved reveals Dana\'s password <code>edenIsMyFavourite</code>.' },
+  { r: 1, t: 'Dana\'s login', p: 'danaZ22 + password', more: 'Answer engine, constant-time compare. Dana\'s desktop then offers "Open room".' },
+  { r: 1, t: 'Door 1', p: 'Open room → Enter Room 2', more: 'OpenDoor then EnterRoom; door data comes from the catalog. Entering Room 2 provisions the git sandbox.' },
+  { r: 2, t: 'Git: the removed key', p: 'Nathanel\'s computer → project', more: '<code>git log --oneline</code> shows "Security fix: Removed private key from repository." <code>git show HEAD~1:server.key</code> prints the key and solves the puzzle. An extra commit (<code>git commit --allow-empty -m x</code>) is a "ruin": the sandbox is rebuilt as generation 2 and the clock keeps running.' },
+  { r: 2, t: 'Read the capture', p: 'Cibus_payment_try.pcap', more: 'Frame 1: Client Random. Frame 3: Modulus N. Frame 5: RSA-encrypted pre-master secret. Everything selectable and copyable.' },
+  { r: 2, t: 'RSA decryptor', p: 'key + N + encrypted PMS', more: 'Outputs the 48-byte PMS (96 hex, starts 0303) with a Copy button. Opens the TLS decryptor.' },
+  { r: 2, t: 'TLS decryptor', p: 'PMS + Client Random', more: '"The file has been decrypted." The capture on Nathanel\'s computer now shows POST /api/v2/payments with the card number. The card number never travelled to the browser before this.' },
+  { r: 2, t: 'Exit keypad', p: 'Type or paste 16 digits', more: 'Wrong code → ACCESS DENIED (counted). <code>4000000131941181</code> → ACCESS GRANTED → "Open door".' },
+  { r: 3, t: 'Victory', p: 'To the victory room', more: 'EnterRoom into the final state → SessionEscaped. Every sandbox is destroyed. Reload keeps the victory screen.' },
+];
+function renderSteps() {
+  put($('steps'), STEPS.map((s, i) => `<button type="button" class="card step ${s.r === 2 ? 'room2' : s.r === 3 ? 'end' : ''}" aria-expanded="false">
+    <span class="n">${s.r === 3 ? 'END' : 'ROOM ' + s.r} · STEP ${i + 1}</span><b>${s.t}</b><p>${s.p}</p><div class="more">${s.more}</div></button>`).join(''));
+  $('steps').addEventListener('click', e => { const b = e.target.closest('.step'); if (b) b.setAttribute('aria-expanded', b.getAttribute('aria-expanded') !== 'true'); });
+}
+
+const HOPS = [['fe', 'Browser screen'], ['gw', 'Gateway :3000'], ['en', 'Engine guards'], ['en', 'Component'], ['sb', 'Sandbox / crypto'], ['en', 'transition()'], ['db', 'DB transaction'], ['en', 'Projection'], ['fe', 'SSE → screen']];
+const SCENARIOS = {
+  git: { name: 'Git command (git show HEAD~1:server.key)', steps: [
+    [0, 'You press Enter in the git terminal', 'The xterm screen sends { kind: "command", command: "git show HEAD~1:server.key" } with a fresh command id.'],
+    [1, 'Gateway checks and forwards', 'Checks your token and that the session is yours, answers 202 Accepted, forwards to the engine.'],
+    [2, 'Engine guards', 'Session Active? Before the deadline? Puzzle open? Git sandbox ready and the same generation? Otherwise rejected (e.g. sandboxRestarting).'],
+    [3, 'Component: terminal-git', 'Parses one line against the policy (no pipes, no vim). Allowed → run it in the sandbox.'],
+    [4, 'Embedded git sandbox', 'isomorphic-git runs on the in-memory repo in a worker thread (5 s / 64 KB). Then the invariant probe checks history is intact.'],
+    [5, 'transition()', 'Output contains the private key → verdict solved → PuzzleSolved, rsa-decryptor opens (opensAfter).'],
+    [6, 'One transaction', 'Snapshot, events and the command log are stored together; the result is kept by command id, so a retry never runs twice.'],
+    [7, 'Projection', 'The session view is updated: puzzle solved, latest result = the git output.'],
+    [8, 'Screen updates', 'The terminal sees a new result for its command id and prints the key. You can select and copy it.'],
+  ] },
+  ruin: { name: 'Breaking the repo (git commit --allow-empty -m x)', steps: [
+    [0, 'You commit', 'The terminal sends the command like any other.'],
+    [2, 'Guards pass', 'Sandbox is ready, generation 1.'],
+    [4, 'Command runs, probe fails', 'The commit succeeds inside the sandbox, but the probe sees a new commit on the branch: invariant headUnchanged broken.'],
+    [3, 'Verdict: ruined', 'The component returns ruined with the failed invariant name (kept out of the player view).'],
+    [5, 'resetPuzzle', 'Generation 1 destroyed, generation 2 provisioned from the fixture, PuzzleReset emitted. Clock unchanged, session stays Active. If the puzzle was already solved it stays solved.'],
+    [7, 'Projection', 'Puzzle view shows the new generation, provisioning, then ready.'],
+    [8, 'Terminal resets', '"Puzzle reset – sandbox restarting", scrollback cleared, input blocked until ready, fresh prompt. git log shows the original history.'],
+  ] },
+  tls: { name: 'TLS decrypt (reveals the card)', steps: [
+    [0, 'You press Decrypt TLS', 'Sends { kind: "tls", pms, clientRandom }.'],
+    [1, 'Gateway', '202 and forward.'],
+    [3, 'Component: tls', 'Validates hex sizes (96 / 64). Malformed → policyBlocked.'],
+    [4, 'Crypto worker', 'TLS 1.2 PRF → master secret → key block → AES-128-GCM over the recorded application data. Every tag must verify.'],
+    [5, 'transition()', 'Solved → revealFiles: the capture whose revealedBy is tls-decryptor gets the decrypted text, for this session only. The door puzzle opens.'],
+    [7, 'Projection', 'Session view gets the decrypted file; the card number appears for the first time.'],
+    [8, 'Screens', 'TLS machine: "The file has been decrypted". Capture viewer: green decrypted rows with the payment.'],
+  ] },
+  door: { name: 'Door code and escape', steps: [
+    [0, 'You enter 16 digits', 'Keypad sends { kind: "answer", answer: "4000000131941181" }.'],
+    [3, 'Component: answer', 'Digits only, spaces between groups removed, constant-time compare.'],
+    [5, 'Solved, then OpenDoor', 'You press "Open door": the door rule (from the catalog) requires the door puzzle solved → DoorOpened.'],
+    [5, 'EnterRoom → final state', 'The door leads to "escaped" → status Escaped, endedAt set, every live sandbox destroyed, SessionEscaped.'],
+    [7, 'Projection', 'Status Escaped in the view; later commands get sessionEnded.'],
+    [8, 'Victory screen', 'Room 03 · Mission complete. A reload shows it again.'],
+  ] },
+};
+let scen = 'git', pos = 0, timer = null;
+function renderFlow() {
+  put($('scenario'), Object.entries(SCENARIOS).map(([k, s]) => `<option value="${k}">${s.name}</option>`).join(''));
+  $('scenario').addEventListener('change', () => { scen = $('scenario').value; pos = 0; stop(); drawFlow(); });
+  $('next').addEventListener('click', () => { stop(); move(1); });
+  $('prev').addEventListener('click', () => { stop(); move(-1); });
+  $('play').addEventListener('click', () => { if (timer) return stop(); pos = 0; drawFlow();
+    $('play').textContent = 'Pause'; timer = setInterval(() => { if (pos >= SCENARIOS[scen].steps.length - 1) return stop(); move(1); }, 1800); });
+  drawFlow();
+}
+function stop() { clearInterval(timer); timer = null; $('play').textContent = 'Play'; }
+function move(d) { const n = SCENARIOS[scen].steps.length; pos = Math.max(0, Math.min(n - 1, pos + d)); drawFlow(); }
+function drawFlow() {
+  const steps = SCENARIOS[scen].steps, [hop, title, text] = steps[pos];
+  const seen = new Set(steps.slice(0, pos).map(s => s[0]));
+  put($('hops'), HOPS.map(([k, label], i) =>
+    `<span class="hop k-${k} ${i === hop ? 'on' : seen.has(i) ? 'done' : ''}">${label}</span>${i < HOPS.length - 1 ? '<span class="sep">→</span>' : ''}`).join(''));
+  put($('flowtext'), `<b>${title}</b>${text}`);
+  $('pos').textContent = `${pos + 1} / ${steps.length}`;
+}
+
+const CHAINS = [
+  { repo: 'Backend (apm0039582-projecthon-team5)', items: [
+    ['base', 'sync/github-main-nov9', 'Sync + Redis removal', 'Merged the latest backend (Archive) into the GitHub snapshot, rebuilt 55 missing files, then removed every Redis trace. Outside the Room 2 tasks.'],
+    ['extra', 'embedded-sql-sandbox', 'Embedded SQL sandbox', 'SandboxDriver interface + EmbeddedDriver (PGlite). SQL works with no pod or container, locally and on AKS. ADR 0001. Outside the tasks; prerequisite for Room 2 git.'],
+    ['r2', 'room2/R2-01-content', 'R2-01 content', 'Script v5: Room 2 puzzles, generated key/cert/capture/card, git fixture, publish script, verify script.'],
+    ['r2', 'room2/R2-05-capture', 'R2-05 reveal', 'Per-session room files; revealFiles on PuzzleSolved; fixed the revealedBy leak.'],
+    ['r2', 'room2/R2-06-rsa', 'R2-06 RSA', 'CryptoPool (hash/rsa), RsaComponent, manual PKCS#1 unpadding.'],
+    ['r2', 'room2/R2-08-door-escape', 'R2-08 doors', 'Answer engine for the door code, catalog-driven doors, Escaped ending.'],
+    ['r2', 'room2/R2-07-tls', 'R2-07 TLS', 'TLS task in the pool, TlsComponent, supplies the reveal.'],
+    ['r2', 'room2/R2-03-git', 'R2-03 git', 'Embedded git sandbox, sandbox-family engine path, migration for the git seed.'],
+    ['r2', 'room2/R2-04-ruin-reset', 'R2-04 ruin', 'Invariant probe, ruined verdict, resetPuzzle, PuzzleReset projection.'],
+    ['r2', 'room2/R2-09-e2e', 'R2-09 verify', 'Winning-path test (no DB), gated DB test to Escaped, runbook, execution audit in tasks.md.'],
+    ['docs', 'docs/agent-quickstart', 'Quickstart', 'AGENT-QUICKSTART.md and this page.'],
+  ] },
+  { repo: 'Frontend (apm0039582-projecthon-fe, team5 folder only)', items: [
+    ['base', 'team5/sync-nov9', 'Sync + no autoplay', 'Team 5 folder synced to the 9 Nov snapshot; music starts only from the music button. Outside the tasks.'],
+    ['r2', 'team5/room2/R2-02-scene', 'R2-02 scene', 'Room 2 pictures, design JSON, Room2Stage/Window, Nathanel\'s desktop, slots for every screen.'],
+    ['r2', 'team5/room2/R2-05-capture', 'R2-05 viewer', 'Wireshark-style capture viewer, encrypted and decrypted states.'],
+    ['r2', 'team5/room2/R2-06-rsa', 'R2-06 RSA', 'RSA machine on the design artwork, Copy button.'],
+    ['r2', 'team5/room2/R2-08-keypad-victory', 'R2-08 keypad', 'Keypad, Open door, victory screen; fixed lost digits.'],
+    ['r2', 'team5/room2/R2-07-tls', 'R2-07 TLS', 'TLS machine.'],
+    ['r2', 'team5/room2/R2-03-terminal', 'R2-03 terminal', 'Vendored xterm, git terminal window like the design.'],
+    ['r2', 'team5/room2/R2-04-ruin-reset', 'R2-04 reset', 'Reset state in the terminal; engine rejections reach the terminal.'],
+    ['r2', 'team5/room2/R2-09-e2e', 'R2-09 flow', 'Room 2 flow test across all screens.'],
+    ['extra', 'team5/background-blur', 'Background blur', 'The decorative background video outside the room box is blurred.'],
+  ] },
+];
+function renderChain() {
+  put($('chain'), CHAINS.map((c, ci) => `<h3>${c.repo}</h3><div class="links">${c.items.map(([k, b, t], i) =>
+    `${i ? '<span class="link">→</span>' : ''}<button type="button" class="br k-${k}" data-c="${ci}" data-i="${i}"><b>${t}</b><code>${b}</code></button>`).join('')}</div>`).join('') +
+    '<div class="brinfo" id="brinfo">Click a branch to see what it adds. The order differs from the task numbers because each task was added when it was approved.</div>');
+  $('chain').addEventListener('click', e => { const b = e.target.closest('.br'); if (!b) return;
+    document.querySelectorAll('.br').forEach(x => x.classList.toggle('sel', x === b));
+    const [, name, title, text] = CHAINS[b.dataset.c].items[b.dataset.i];
+    put($('brinfo'), `<b>${title}</b> · <code>${name}</code><br>${text}`); });
+}
+
+const CHANGES = [
+  ['fix', 'Hidden file field leaked to players', 'R2-05 · backend', 'The catalog-only field revealedBy (which puzzle unlocks the decrypted capture) was copied into RoomEntered and PuzzleSolved events, so the browser received it.', 'All files now pass through publicFiles(); a test asserts no event or snapshot contains revealedBy.'],
+  ['fix', 'Capture viewer table empty in preview', 'R2-05 · frontend', 'Preview data from R2-02 used a 4-line placeholder capture that the parser does not recognise.', 'Preview data uses the real generated capture; if a file cannot be parsed, its raw text is shown instead of an empty table.'],
+  ['fix', 'Keypad lost digits when typed fast', 'R2-08 · frontend', 'Each key press built the next value from the last rendered state, so several presses before a re-render overwrote each other (4 keys gave 1 digit).', 'The digits live in a ref updated synchronously; tests type 16 digits + Enter in one tick.'],
+  ['fix', 'Terminal waited 30 s on rejected commands', 'R2-04 · frontend', 'Engine-level rejections (e.g. sandbox restarting) are stored on the session view, not on the puzzle, so the terminal never saw them.', 'The terminal reads the session-level latest result, matched by its own command id.'],
+  ['fix', 'Game end left the git sandbox running', 'R2-03 + R2-08', 'The Escaped ending only destroyed SQL sandboxes.', 'destroy() now covers every sandbox engine; a regression test checks a destroy job for git at Escaped. Verified live: all sandboxes end destroyed.'],
+  ['fix', 'RSA decrypt refused by Node 22', 'R2-01 / R2-06 · backend', 'Node 22 rejects privateDecrypt with PKCS#1 v1.5 padding (a security hardening).', 'Decrypt raw (RSA_NO_PADDING) and remove the padding manually, checking its format.'],
+  ['fix', 'RSA/TLS tests broke after git became a sandbox', 'R2-03 merge', 'Those tests solved the git puzzle without a ready sandbox; the engine correctly rejects that now.', 'Tests mark the git sandbox ready first, like the door test.'],
+  ['fix', 'Embedded SQL race and digest check', 'Embedded driver · before Room 2', 'Concurrent queries could resolve the wrong promise; the database requires digest-pinned sandbox images.', 'Per-thread pending map; a pinned identity embedded/room1-sql@sha256:&lt;fixture hash&gt; published as SQL template 2.'],
+  ['dev', 'Git runs in the engine, not in a pod', 'R2-03 · decision', 'tasks.md asked for a git container image, a pod and a compose service.', 'Pods cannot be created in the Team 5 namespace. Git runs on isomorphic-git over an in-memory file system in a worker thread; the Kubernetes driver reports git as unsupported (ADR 0001).'],
+  ['dev', 'xterm copied into the team5 folder', 'R2-03 · decision', 'tasks.md said to add xterm.js as an npm dependency.', 'The shared frontend may only change src/teams/team5, so xterm and its fit addon were vendored from the design HTML.'],
+  ['dev', 'Door code is a valid test card', 'R2-01 / R2-08 · decision', 'The HTML used 4729384090176621, which fails the Luhn check.', 'Generated Luhn-valid test card 4000000131941181, consistent through the capture, the keypad and the tests.'],
+  ['dev', 'Key is revealed by git show HEAD~1:server.key', 'R2-03', 'tasks.md says git show HEAD~1 prints the key.', 'In real git that shows the commit\'s diff (a README change here). The key is printed by HEAD~1:server.key, or checkout HEAD~1 + cat server.key.'],
+  ['dev', 'What counts as breaking the repo', 'R2-04', 'Design: HEAD commit id must not change.', 'Checking out an older commit is a valid way to find the key, so the probe judges the branch tip and history instead. A ruin after solving keeps the puzzle solved. resetRoom is not implemented.'],
+  ['dev', 'Doors from catalog data, one legacy entry', 'R2-08', 'No room or puzzle names in door code.', 'transition.ts has none; doors.ts keeps one Room 1 entry for catalogs v3/v4, which were published before doors became data.'],
+  ['dev', 'English text, small UI additions', 'R2-02 … R2-08', 'The design HTML is in Hebrew; some screens had no copy/paste affordance.', 'English text in the same places. Added: RSA Copy button, keypad paste field, "The file has been decrypted" strip; the TLS art\'s third box has no input (the contract has only PMS and client random); the capture\'s Time column is synthetic.'],
+  ['dev', 'Same as the HTML, maybe surprising', 'Behaviour', 'Esc inside the git terminal does nothing (xterm takes the key); the keypad sits over the middle of the open door.', 'Kept as in the design. Use the back button / ×, and click the "To the victory room" label. Follow-up R2-10 makes Esc work.'],
+  ['extra', 'Embedded sandbox driver (no pods)', 'Before Room 2', 'Puzzles had to run the moment the app starts, locally and when deployed, without creating containers or pods.', 'SandboxDriver interface; embedded driver is the default; Helm sets SANDBOX_ENABLED and publishes the embedded SQL template on start.'],
+  ['extra', 'Backend and frontend syncs', 'Before Room 2', 'The latest code lived in separate "up to date" folders.', 'Merged into sync/github-main-nov9 and team5/sync-nov9; 55 missing backend files rebuilt from the uploaded copies.'],
+  ['extra', 'Redis removed, music autoplay removed', 'Before Room 2', 'Redis was unused; background music started by itself.', 'Every Redis trace removed; music starts only from the music button.'],
+  ['extra', 'Runs locally with minimal additions', 'Before Room 2', 'AT&T npm registry unreachable, schema team5 missing locally, repo path with spaces.', 'Public npm config + lockfile copy outside the repo, one-time CREATE SCHEMA, a no-spaces link. See AGENT-QUICKSTART.md.'],
+  ['extra', 'Visual check against the HTML', 'Every Room 2 screen', 'Rebuilt screens can drift from the design.', 'Each screen was compared side by side with the design HTML at 1280×800 before it was accepted.'],
+  ['extra', 'Commit authorship cleaned', '10 Nov 2026', 'Commits carried a personal account and AI tool identities / co-author lines.', 'Our commits now show Team 5 &lt;team5@intl.att.com&gt;; other people\'s commits are unchanged byte for byte; old copies purged.'],
+  ['extra', 'Background blur, quickstart, this page', '10 Nov 2026', 'Requested after Room 2 was done.', 'team5/background-blur; docs/agent-quickstart.'],
+];
+const LABEL = { fix: 'Bug fixed', dev: 'Departure from design', extra: 'Outside the tasks' };
+let filt = 'all';
+function renderChanges() {
+  const counts = { all: CHANGES.length }; CHANGES.forEach(c => counts[c[0]] = (counts[c[0]] || 0) + 1);
+  put($('filter'), [['all', 'All'], ['fix', 'Bugs fixed'], ['dev', 'Departures'], ['extra', 'Outside the tasks']]
+    .map(([k, t]) => `<button type="button" data-f="${k}" aria-pressed="${k === filt}">${t} (${counts[k]})</button>`).join(''));
+  const shown = CHANGES.filter(c => filt === 'all' || c[0] === filt);
+  $('count').textContent = `${shown.length} item${shown.length === 1 ? '' : 's'}`;
+  put($('list'), shown.map(([k, t, where, why, what]) =>
+    `<article class="card chg ${k}"><h4>${t}</h4><div class="meta"><span class="chip ${k}">${LABEL[k]}</span> &nbsp;${where}</div>
+     <p><b>${k === 'fix' ? 'Problem' : k === 'dev' ? 'Planned' : 'Why'}:</b> ${why}</p><p><b>${k === 'fix' ? 'Fix' : k === 'dev' ? 'Done instead' : 'What'}:</b> ${what}</p></article>`).join(''));
+}
+$('filter').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { filt = b.dataset.f; renderChanges(); } });
+
+document.querySelector('nav.tabs').addEventListener('click', e => {
+  const b = e.target.closest('button[data-view]'); if (!b) return;
+  document.querySelectorAll('nav.tabs button').forEach(x => x.setAttribute('aria-selected', x === b));
+  document.querySelectorAll('section.view').forEach(s => s.classList.toggle('active', s.id === b.dataset.view));
+});
+$('theme').addEventListener('click', () => {
+  const root = document.documentElement, dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  root.dataset.theme = dark ? 'light' : 'dark';
+});
+renderMap(); showNode('git'); renderSteps(); renderFlow(); renderChain(); renderChanges();
+</script>
+</body>
+</html>

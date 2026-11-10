@@ -1,0 +1,3 @@
+/* TLS decryptor: output text wraps inside the design's output rect. The art's "Ciphertext" row has no field (the contract takes only PMS and Client Random). */
+.interactive-screen .t5-tls-output { white-space: normal; overflow-wrap: anywhere; align-items: flex-start; font-size: clamp(8px, 1.05vw, 13px); line-height: 1.2; }
+@media (max-width: 600px) { .interactive-screen .t5-tls-output { font-size: 7px; line-height: 8px; padding: 1px 3px; } }

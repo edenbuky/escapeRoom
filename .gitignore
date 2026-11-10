@@ -1,5 +1,6 @@
 .DS_Store
 ATT56962.gitignore
+.claude/
 node_modules/
 dist/
 build/
@@ -20,3 +21,4 @@ kubeconfig*
 secrets/
 npm-debug.log*
 *.local
+github/

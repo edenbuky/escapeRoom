@@ -1,0 +1,2 @@
+.team5-game .victory-banner { position: absolute; z-index: 4; left: 50%; bottom: 3%; translate: -50% 0; border: 1px solid #dbebffbd; border-radius: 14px; padding: 9px 20px; background: #0b2a4fdb; color: white; font-size: clamp(12px, 1.5vw, 19px); font-weight: 800; white-space: nowrap; box-shadow: 0 8px 30px #0007; pointer-events: none; }
+.team5-game .t5-victory-actions { min-height: 0; padding: 14px; }
